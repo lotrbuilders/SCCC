@@ -1,0 +1,27 @@
+int SYM_EOF;
+
+int SYM_INT;
+
+int SYM_RETURN;
+int SYM_IF;
+int SYM_ELSE;
+int SYM_FOR;
+int SYM_WHILE;
+
+int SYM_ID;
+int SYM_CONSTANT;
+
+int SYM_FUNC_DEF;
+int SYM_TRANSLATION_UNIT;
+int SYM_COMPOUND_STATEMENT;
+
+int SYM_NEGATE;
+int SYM_LE;
+int SYM_GE;
+int SYM_NE;
+int SYM_EQ;
+int SYM_LOR;
+int SYM_LAND;
+
+int SYM_STATEMENT_LIST;
+int SYM_LOCAL_DECLERATION;
