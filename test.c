@@ -1,18 +1,8 @@
-int putchar(int c);
 
 int main() {
-    putchar('H');
-    putchar('e');
-    putchar('l');
-    putchar('l');
-    putchar('o');
-    putchar(' ');
-    putchar('W');
-    putchar('o');
-    putchar('r');
-    putchar('l');
-    putchar('d');
-    putchar('!');
-    putchar('\n');
-	return 10;
+	int i=4;
+	int *p=&i;
+	int **pp=&p;
+	**pp=8;
+	return **pp;
 }

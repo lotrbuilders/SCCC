@@ -187,6 +187,14 @@ int gen_negate()
 	
 }
 
+int gen_pointer()
+{
+	
+	puts("\tmov eax,[eax]");
+	return 0;
+	
+}
+
 int gen_constant(int constant)
 {
 	

@@ -2,6 +2,7 @@
 #include "lexer.h"
 #include "symbols.h"
 #include "node.h"
+#include "type.h"
 #include <stdio.h>
 
 char *i_strdup(char *str);
@@ -18,6 +19,7 @@ int **parse_jump_statement();
 int **parse_selection_statement();
 int **parse_iteration_statement();
 int **parse_decleration();
+int **parse_declerator();
 int **parse_local_decleration();
 
 int **parse_expression();
@@ -126,7 +128,10 @@ int **parse_translation_unit()
 
 /*
 	global-decleration :=
-		INT ID ( ) { statement-list }
+		decleration ;
+		decleration = expression ;
+		decleration ( ) ; 
+		decleration ( ) { statement-list }
 */
 
 int **parse_global()
@@ -135,19 +140,22 @@ int **parse_global()
 		fprintf(stderr,"parse global\n");
 	
 	char *name;
+	int **decleration;
+	int type;
 	int **node;
 	int **arg;
 	int **statements;
 	statements=0;
 	node=newnode(5);
-	expect(SYM_INT);
-	expect(SYM_ID);
-	name=i_strdup(lexed_string);
+	decleration=parse_decleration();
+	name=*(decleration+2);
+	type=*(decleration+1);
 	if(peek()==';')
 	{
 		pop();
 		*node=SYM_GLOBAL_DECL;
 		*(node+1)=name;
+		*(node+4)=type;
 	}
 	else if(peek()=='=')
 	{
@@ -155,6 +163,7 @@ int **parse_global()
 		*node=SYM_GLOBAL_DEF;
 		*(node+1)=name;
 		*(node+2)=parse_expression();
+		*(node+4)=type;
 		expect(';');
 		
 	}
@@ -182,12 +191,17 @@ int **parse_global()
 		*(node+1)=name;
 		*(node+2)=statements;
 		*(node+3)=arg;
+		*(node+4)=type;
 	}
 	
 	return node;
 	
 }
 
+/*
+	decleration-list :=
+		decleration { , decleration }
+*/
 int **parse_decleration_list()
 {
 	int **list;
@@ -240,7 +254,7 @@ int **parse_statement_list()
 	statement :=
 		jump-statement
 		selection-statement
-		decleration
+		local-decleration
 */
 
 int **parse_statement()
@@ -288,7 +302,7 @@ int **parse_local_decleration()
 		fprintf(stderr,"parse local decleration\n");
 	
 	int **node=newnode(3);
-	*node=SYM_LOCAL_DECLERATION;
+	*node=SYM_LOCAL_DECLARATION;
 	*(node+1)=parse_decleration();
 	if(peek()=='=')
 	{
@@ -303,7 +317,7 @@ int **parse_local_decleration()
 
 /*
 	decleration :=
-		INT ID 
+		INT declerator 
 */
 int **parse_decleration()
 {
@@ -316,16 +330,51 @@ int **parse_decleration()
 	
 	if(peek()==SYM_INT)
 	{
+		int **declerator;
 		int type;
 		char *name;
 		type=pop();
-		expect(SYM_ID);
-		name=i_strdup(lexed_string);
+		declerator=parse_declerator();
+		
+		type=declarator_type(declerator,type);
+		
+		name=declarator_name(declerator);
 		node=newnode(4);
-		*node=SYM_DECLERATION;
+		*node=SYM_DECLARATION;
 		*(node+1)=type;
 		*(node+2)=name;
+		*(node+3)=declerator;
 	}
+	
+	return node;
+	
+}
+
+/*
+	declarator :=
+		{ * } + ID
+*/
+
+int **parse_declerator()
+{
+	
+	if(PARSER_DEBUG)
+		fprintf(stderr,"parse declerator\n");
+	
+	int **node;
+	node=0;
+	int ptr_count;
+	ptr_count=0;
+	while(peek()=='*')
+	{
+		pop();
+		ptr_count=ptr_count+1;
+	}
+	node=newnode(3);
+	*node=SYM_DECLARATOR;
+	expect(SYM_ID);
+	*(node+1)=i_strdup(lexed_string);
+	*(node+2)=ptr_count;
 	
 	return node;
 	
@@ -678,6 +727,8 @@ int **parse_multiplicative_expression()
 /*
 	unary-expression :=
 		- unary-expression
+		* unary-expression
+		& unary-expression
 		postfix-expression
 */
 int **parse_unary_expression()
@@ -689,13 +740,32 @@ int **parse_unary_expression()
 	int **ast;
 	if(peek()=='-')
 	{
-		
 		if(PARSER_DEBUG)
 			fprintf(stderr,"parsed negation\n");
 		
 		pop();
 		ast=newnode(2);
 		*ast=SYM_NEGATE;
+		*(ast+1)=parse_unary_expression();
+	}
+	else if(peek()=='*')
+	{
+		if(PARSER_DEBUG)
+			fprintf(stderr,"parsed negation\n");
+		
+		pop();
+		ast=newnode(2);
+		*ast=SYM_POINTER;
+		*(ast+1)=parse_unary_expression();
+	}
+	else if(peek()=='&')
+	{
+		if(PARSER_DEBUG)
+			fprintf(stderr,"parsed negation\n");
+		
+		pop();
+		ast=newnode(2);
+		*ast=SYM_ADDRESS;
 		*(ast+1)=parse_unary_expression();
 	}
 	else
@@ -707,7 +777,7 @@ int **parse_unary_expression()
 
 /*
 	postfix-expression :=
-		unary-expression { ( expression-list ) } +
+		primary-expression { ( expression-list ) } +
 */		
 int **parse_postfix_expression()
 {

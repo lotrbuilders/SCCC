@@ -1,56 +1,34 @@
-global SYM_EOF
-SYM_EOF: dd -1
-global SYM_INT
-SYM_INT: dd 128
-global SYM_RETURN
-SYM_RETURN: dd 144
-global SYM_IF
-SYM_IF: dd 145
-global SYM_ELSE
-SYM_ELSE: dd 147
-global SYM_FOR
-SYM_FOR: dd 148
-global SYM_WHILE
-SYM_WHILE: dd 149
-global SYM_ID
-SYM_ID: dd 192
-global SYM_CONSTANT
-SYM_CONSTANT: dd 193
-global SYM_FUNC_DEF
-SYM_FUNC_DEF: dd 256
-global SYM_FUNC_DECL
-SYM_FUNC_DECL: dd 257
-global SYM_GLOBAL_DEF
-SYM_GLOBAL_DEF: dd 258
-global SYM_GLOBAL_DECL
-SYM_GLOBAL_DECL: dd 259
-global SYM_TRANSLATION_UNIT
-SYM_TRANSLATION_UNIT: dd 260
-global SYM_COMPOUND_STATEMENT
-SYM_COMPOUND_STATEMENT: dd 261
-global SYM_NEGATE
-SYM_NEGATE: dd 512
-global SYM_LE
-SYM_LE: dd 513
-global SYM_GE
-SYM_GE: dd 514
-global SYM_NE
-SYM_NE: dd 515
-global SYM_EQ
-SYM_EQ: dd 516
-global SYM_LOR
-SYM_LOR: dd 517
-global SYM_LAND
-SYM_LAND: dd 518
-global SYM_STATEMENT_LIST
-SYM_STATEMENT_LIST: dd 1024
-global SYM_DECLERATION
-SYM_DECLERATION: dd 1025
-global SYM_FUNC_CALL
-SYM_FUNC_CALL: dd 1026
-global SYM_EXPR_LIST
-SYM_EXPR_LIST: dd 1027
-global SYM_DECL_LIST
-SYM_DECL_LIST: dd 1028
-global SYM_LOCAL_DECLERATION
-SYM_LOCAL_DECLERATION: dd 1029
+global main:function (main.end-main)
+main:
+	push ebp
+	mov ebp,esp
+	pop eax
+	push eax
+	mov eax,4
+	push eax
+	pop eax
+	push eax
+	lea eax,[ebp-4]
+	push eax
+	pop eax
+	push eax
+	lea eax,[ebp-8]
+	push eax
+	pop eax
+	push eax
+	mov eax,8
+	push eax
+	mov eax,[ebp-12]
+	mov eax,[eax]
+	mov ebx,eax
+	mov eax,[esp]
+	mov [ebx],eax
+	pop eax
+	push eax
+	mov eax,[ebp-12]
+	mov eax,[eax]
+	mov eax,[eax]
+	mov esp,ebp
+	pop ebp
+	ret
+.end:

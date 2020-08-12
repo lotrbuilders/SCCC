@@ -23,6 +23,8 @@ int gen_add();
 int gen_subtract();
 int gen_multiply();
 int gen_negate();
+int gen_pointer();
+
 int gen_constant(int constant);
 int gen_local_var(int location);
 int gen_global_var(char *name);

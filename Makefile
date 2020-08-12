@@ -7,7 +7,7 @@ vpath %.c ./src
 vpath %.h $(IDIR)
 vpath %.o $(ODIR)
 
-_OBJ = errorhandling.o symbols.o lexer.o main.o parser.o node.o eval.o identifiers.o
+_OBJ = errorhandling.o symbols.o lexer.o main.o parser.o node.o eval.o identifiers.o type.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 all : compiler
@@ -23,13 +23,16 @@ $(ODIR)/symbols.o : symbols.c
 $(ODIR)/node.o : node.c 
 	$(CC) $(CFLAGS) -o $@ $<
 	
+$(ODIR)/type.o : type.c 
+	$(CC) $(CFLAGS) -o $@ $<
+	
 $(ODIR)/identifiers.o : identifiers.c 
 	$(CC) $(CFLAGS) -o $@ $<
 	
 $(ODIR)/lexer.o : lexer.c errorhandling.h symbols.h lexer.h node.h
 	$(CC) $(CFLAGS) -o $@ $<
 	
-$(ODIR)/parser.o : parser.c errorhandling.h symbols.h parser.h
+$(ODIR)/parser.o : parser.c errorhandling.h symbols.h parser.h type.h
 	$(CC) $(CFLAGS) -o $@ $<
 	
 $(ODIR)/eval.o : eval.c errorhandling.h eval.h gen.h identifiers.h

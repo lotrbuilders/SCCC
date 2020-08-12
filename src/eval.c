@@ -44,7 +44,6 @@ int eval_global(int **ast)
 	if(id==SYM_FUNC_DEF)
 	{
 		enter_block();
-		
 		eval_function_arguments(*(ast+3),-12);
 		int pop_count;
 		gen_function_prolog(*(ast+1));
@@ -58,7 +57,7 @@ int eval_global(int **ast)
 		gen_extern(*(ast+1));
 	else if(id==SYM_GLOBAL_DECL)
 	{
-		add_global(*(ast+1),SYM_INT);
+		add_global(*(ast+1),*(ast+2));
 		gen_common(*(ast+1));
 	}
 	else if(id==SYM_GLOBAL_DEF)
@@ -66,7 +65,7 @@ int eval_global(int **ast)
 		int val;
 		val=eval_const_expression(*(ast+2));
 		gen_decleration(*(ast+1),val);
-		add_global(*(ast+1),SYM_INT);
+		add_global(*(ast+1),*(ast+2));
 	}
 	else
 		error("unexpected symbol in eval-global");
@@ -79,7 +78,7 @@ int eval_function_arg(int **ast,int loc)
 		return debug_warning("ast==NULL in eval-function-arg");
 	int id;
 	id=*ast;
-	if(id==SYM_DECLERATION)
+	if(id==SYM_DECLARATION)
 	{
 		add_argument_identifier(*(ast+2),*(ast+1),loc);
 	}
@@ -129,7 +128,7 @@ int eval_statement(int **ast)
 		eval_expression(*(ast+1));
 		gen_return();
 	}
-	else if(id==SYM_LOCAL_DECLERATION)
+	else if(id==SYM_LOCAL_DECLARATION)
 	{
 		eval_decleration(ast);
 	}
@@ -223,7 +222,7 @@ int eval_decleration(int **ast)
 	fprintf(stderr,"ast:%p|%d\n",ast,*ast);
 	fprintf(stderr,"child:%p|%d\n",child,*child);
 	fprintf(stderr,"child id:%s\n",*(child+2));
-	add_identifier(*(child+2),SYM_INT);
+	add_identifier(*(child+2),*(child+1));
 	if(*(ast+2)==0)
 		gen_push_constant(0);
 	else
@@ -272,6 +271,15 @@ int eval_expression(int **ast)
 	{
 		eval_expression(*(ast+1));
 		gen_negate();
+	}
+	else if(id==SYM_POINTER)
+	{
+		eval_expression(*(ast+1));
+		gen_pointer();
+	}
+	else if(id==SYM_ADDRESS)
+	{
+		eval_lvalue(*(ast+1));
 	}
 	else if(id==SYM_FUNC_CALL)
 	{
@@ -360,9 +368,13 @@ int eval_lvalue(int **ast)
 		else
 			error("Unknown identifier");
 	}
+	else if(id==SYM_POINTER)
+	{
+		eval_expression(*(ast+1));
+	}
 	else 
 		error("unexpected symbol in eval-lvalue");	
-	
+	return 0;
 }
 
 int eval_func_arg(int **ast)
