@@ -40,12 +40,12 @@ int lex()
 			return lex_id(c);
 		else if(isdigit(c))
 			return lex_num(c);
-		else if(ispunct(c))
-			return lex_punct(c);
 		else if(c=='\'')
 			return lex_char();
 		else if(c=='"')
 			return lex_string();
+		else if(ispunct(c))
+			return lex_punct(c);
 		else if(c==EOF)
 			return SYM_EOF;
 		else
@@ -107,7 +107,7 @@ int lex_num(int c)
 
 int lex_punct(int c)
 {
-	if((c==';')||(c=='(')||(c==')')||(c=='{')||(c=='}')||(c=='-')||(c=='+')||(c=='*'))
+	if((c==';')||(c=='(')||(c==')')||(c=='{')||(c=='}')||(c=='-')||(c=='+')||(c=='*')||(c==','))
 		return c;
 	else if(c=='<')
 	{

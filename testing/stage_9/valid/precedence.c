@@ -3,5 +3,5 @@ int three() {
 }
 
 int main() {
-    return !three();
+    return -three();
 }

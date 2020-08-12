@@ -10,12 +10,14 @@ int tk;
 
 int **parse_translation_unit();
 int **parse_global();
+int **parse_decleration_list();
 int **parse_statement_list();
 
 int **parse_statement();
 int **parse_jump_statement();
 int **parse_selection_statement();
 int **parse_iteration_statement();
+int **parse_decleration();
 int **parse_local_decleration();
 
 int **parse_expression();
@@ -26,11 +28,13 @@ int **parse_equality_expression();
 int **parse_comparison_expression();
 int **parse_additive_expression();
 int **parse_multiplicative_expression();
+int **parse_postfix_expression();
+int **parse_expression_list();
 int **parse_unary_expression();
 int **parse_primary_expression();
 
-int PARSER_DEBUG=0;
-int PEEK_DEBUG=0;
+int PARSER_DEBUG=1;
+int PEEK_DEBUG=1;
 
 int peek()
 {
@@ -132,27 +136,79 @@ int **parse_global()
 	
 	char *name;
 	int **node;
+	int **arg;
 	int **statements;
-	
+	statements=0;
+	node=newnode(5);
 	expect(SYM_INT);
 	expect(SYM_ID);
 	name=i_strdup(lexed_string);
-	expect('(');
-	expect(')');
-	expect('{');
-	statements=parse_statement_list();
-	expect('}');
-	
-	if(PARSER_DEBUG)
-		fprintf(stderr,"function %s\n",name);
-	
-	node=newnode(5);
-	*node=SYM_FUNC_DEF;
-	*(node+1)=name;
-	*(node+2)=statements;
+	if(peek()==';')
+	{
+		pop();
+		*node=SYM_GLOBAL_DECL;
+		*(node+1)=name;
+	}
+	else if(peek()=='=')
+	{
+		pop();
+		*node=SYM_GLOBAL_DEF;
+		*(node+1)=name;
+		*(node+2)=parse_expression();
+		expect(';');
+		
+	}
+	else
+	{
+		expect('(');
+		arg=parse_decleration_list();
+		expect(')');
+		
+		if(peek()=='{')
+		{
+			*node=SYM_FUNC_DEF;
+			expect('{');
+			statements=parse_statement_list();
+			expect('}');
+			if(PARSER_DEBUG)
+				fprintf(stderr,"function %s\n",name);
+		}
+		else 
+		{
+			expect(';');
+			*node=SYM_FUNC_DECL;
+		}
+		
+		*(node+1)=name;
+		*(node+2)=statements;
+		*(node+3)=arg;
+	}
 	
 	return node;
 	
+}
+
+int **parse_decleration_list()
+{
+	int **list;
+	if(PARSER_DEBUG)
+		fprintf(stderr,"parse decleration-list\n");
+	if(peek()==')')
+		return 0;
+	else 
+	{
+		list=newnode(3);
+		*list=SYM_DECL_LIST;
+		*(list+1)=parse_decleration();
+		if(peek()==',')
+		{
+			pop();
+			*(list+2)=parse_decleration_list();
+		}
+		else
+			*(list+2)=0;
+		return list;
+	}
 }
 
 /*
@@ -222,11 +278,36 @@ int **parse_statement()
 }
 
 /*
-	decleration :=
-		INT ID ;
+	local-decleration :=
+		decleration ;
+		decleration = expression ';'
 */
 int **parse_local_decleration()
 {
+	if(PARSER_DEBUG)
+		fprintf(stderr,"parse local decleration\n");
+	
+	int **node=newnode(3);
+	*node=SYM_LOCAL_DECLERATION;
+	*(node+1)=parse_decleration();
+	if(peek()=='=')
+	{
+		pop();
+		*(node+2)=parse_expression();
+	}
+	expect(';');
+	
+	return node;
+	
+}
+
+/*
+	decleration :=
+		INT ID 
+*/
+int **parse_decleration()
+{
+	
 	if(PARSER_DEBUG)
 		fprintf(stderr,"parse decleration\n");
 	
@@ -240,9 +321,8 @@ int **parse_local_decleration()
 		type=pop();
 		expect(SYM_ID);
 		name=i_strdup(lexed_string);
-		expect(';');
 		node=newnode(4);
-		*node=SYM_LOCAL_DECLERATION;
+		*node=SYM_DECLERATION;
 		*(node+1)=type;
 		*(node+2)=name;
 	}
@@ -250,6 +330,9 @@ int **parse_local_decleration()
 	return node;
 	
 }
+
+
+
 
 /*
 	jump-statement :=
@@ -590,10 +673,12 @@ int **parse_multiplicative_expression()
 	
 }
 
+
+
 /*
 	unary-expression :=
 		- unary-expression
-		primary-expression
+		postfix-expression
 */
 int **parse_unary_expression()
 {
@@ -614,10 +699,64 @@ int **parse_unary_expression()
 		*(ast+1)=parse_unary_expression();
 	}
 	else
-		ast=parse_primary_expression();
+		ast=parse_postfix_expression();
 	
 	return ast;
 	
+}
+
+/*
+	postfix-expression :=
+		unary-expression { ( expression-list ) } +
+*/		
+int **parse_postfix_expression()
+{
+	if(PARSER_DEBUG)
+		fprintf(stderr,"parse postfix-expression\n");
+	
+	int **top;
+	top=parse_primary_expression();
+	if(peek()=='(')
+	{
+		pop();
+		if(PARSER_DEBUG)
+			fprintf(stderr,"parsed %c\n",peek());
+		
+		int **new;
+		new=newnode(3);
+		*new=SYM_FUNC_CALL;
+		*(new+1)=top;
+		*(new+2)=parse_expression_list();
+		top=new;
+		expect(')');
+		
+	}
+	
+	return top;
+	
+}
+
+int **parse_expression_list()
+{
+	int **list;
+	if(PARSER_DEBUG)
+		fprintf(stderr,"parse expression-list\n");
+	if(peek()==')')
+		return 0;
+	else 
+	{
+		list=newnode(3);
+		*list=SYM_EXPR_LIST;
+		*(list+1)=parse_expression();
+		if(peek()==',')
+		{
+			pop();
+			*(list+2)=parse_expression_list();
+		}
+		else
+			*(list+2)=0;
+		return list;
+	}
 }
 
 /*

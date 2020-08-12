@@ -20,6 +20,7 @@ char *i_strdup(char *str)
 		tmp=tmp+1;
 		str=str+1;
 	}
+	*tmp=0;
 	return ptr;
 }
 

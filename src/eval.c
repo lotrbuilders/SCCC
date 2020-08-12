@@ -5,11 +5,14 @@
 #include <stdio.h>
 
 int eval_global(int **ast);
+int eval_function_arguments(int **ast,int loc);
 int eval_statements(int **ast);
 int eval_statement(int **ast);
 int eval_decleration(int **ast);
 int eval_expression(int **ast);
 int eval_lvalue(int **ast);
+int eval_func_call(int **ast);
+int eval_const_expression(int **ast);
 
 int global_label_count=0;
 
@@ -40,16 +43,62 @@ int eval_global(int **ast)
 	id=*ast;
 	if(id==SYM_FUNC_DEF)
 	{
+		enter_block();
+		
+		eval_function_arguments(*(ast+3),-12);
 		int pop_count;
 		gen_function_prolog(*(ast+1));
 		enter_block();
 		eval_statements(*(ast+2));
-		pop_count=leave_block();
+		pop_count=leave_block(0);
 		gen_function_epilog();
-		return 0;
+		leave_block(1);
+	}
+	else if(id==SYM_FUNC_DECL)
+		gen_extern(*(ast+1));
+	else if(id==SYM_GLOBAL_DECL)
+	{
+		add_global(*(ast+1),SYM_INT);
+		gen_common(*(ast+1));
+	}
+	else if(id==SYM_GLOBAL_DEF)
+	{
+		int val;
+		val=eval_const_expression(*(ast+2));
+		gen_decleration(*(ast+1),val);
+		add_global(*(ast+1),SYM_INT);
 	}
 	else
 		error("unexpected symbol in eval-global");
+	return 0;
+}
+
+int eval_function_arg(int **ast,int loc)
+{
+	if(ast==0)
+		return debug_warning("ast==NULL in eval-function-arg");
+	int id;
+	id=*ast;
+	if(id==SYM_DECLERATION)
+	{
+		add_argument_identifier(*(ast+2),*(ast+1),loc);
+	}
+	return 0;
+}
+
+
+int eval_function_arguments(int **ast,int loc)
+{
+	if(ast==0)
+		return -12;
+	int id;
+	id=*ast;
+	if(id!=SYM_DECL_LIST)
+		error("Expected decleration list");
+	eval_function_arg(*(ast+1),loc);
+	loc=eval_function_arguments(*(ast+2),loc-4);
+	loc=loc-4;
+	return loc;
 }
 
 int eval_statements(int **ast)
@@ -89,7 +138,7 @@ int eval_statement(int **ast)
 		int count;
 		enter_block();
 		eval_statements(*(ast+1));
-		count=leave_block();
+		count=leave_block(0);
 		gen_subtract_sp(count);
 	}
 	else if(id==SYM_IF)
@@ -162,7 +211,7 @@ int eval_statement(int **ast)
 	{
 		gen_pop();
 		eval_expression(ast);
-		gen_pop();
+		//gen_pop();
 	}
 	return 0;
 }
@@ -170,8 +219,19 @@ int eval_statement(int **ast)
 
 int eval_decleration(int **ast)
 {
-	add_identifier(*(ast+2));
-	gen_push_constant(0);
+	int **child=*(ast+1);
+	fprintf(stderr,"ast:%p|%d\n",ast,*ast);
+	fprintf(stderr,"child:%p|%d\n",child,*child);
+	fprintf(stderr,"child id:%s\n",*(child+2));
+	add_identifier(*(child+2),SYM_INT);
+	if(*(ast+2)==0)
+		gen_push_constant(0);
+	else
+	{
+		gen_pop();
+		eval_expression(*(ast+2));
+		gen_dup();
+	}
 	return 0;
 }
 
@@ -192,18 +252,32 @@ int eval_expression(int **ast)
 	{
 		if(isvalid(*(ast+1)))
 		{
-			int loc;
-			loc=locate_identifier(*(ast+1));
-			gen_local_var(loc);
+			if(isglobal(*(ast+1)))
+				gen_global_var(*(ast+1));
+			else
+			{
+				int loc;
+				loc=locate_identifier(*(ast+1));
+				gen_local_var(loc);
+			}
 		}
 		else
+		{
+			fprintf(stderr,"name:%s\n",*(ast+1));
 			error("Unknown identifier");
+		}
 		
 	}
 	else if(id==SYM_NEGATE)
 	{
 		eval_expression(*(ast+1));
 		gen_negate();
+	}
+	else if(id==SYM_FUNC_CALL)
+	{
+		gen_dup();
+		eval_func_call(ast);
+		
 	}
 	else if(id=='*')
 	{
@@ -274,9 +348,14 @@ int eval_lvalue(int **ast)
 	{
 		if(isvalid(*(ast+1)))
 		{
-			int loc;
-			loc=locate_identifier(*(ast+1));
-			gen_local_address(loc);
+			if(isglobal(*(ast+1)))
+				gen_global_address(*(ast+1));
+			else 
+			{
+				int loc;
+				loc=locate_identifier(*(ast+1));
+				gen_local_address(loc);
+			}
 		}
 		else
 			error("Unknown identifier");
@@ -286,9 +365,53 @@ int eval_lvalue(int **ast)
 	
 }
 
+int eval_func_arg(int **ast)
+{
+	if(ast==0)
+	{
+		return 0;
+	}
+	int id;
+	int loc;
+	id=*ast;
+	if(id!=SYM_EXPR_LIST)
+		error("Expected expression list");
+	loc=eval_func_arg(*(ast+2))+4;
+	gen_pop();
+	eval_expression(*(ast+1));
+	gen_dup();
+	return loc;
+	
+}
 
+int eval_func_call(int **ast)
+{
+	int child_id;
+	char *name;
+	int offset;
+	child_id=**(ast+1);
+	if(child_id!=SYM_ID)
+		error("Expected call to identifier");
+	int **child;
+	child=*(ast+1);
+	name=*(child+1);
+	offset=eval_func_arg(*(ast+2));
+	gen_function_call(name);
+	gen_subtract_sp(offset);
+	return 0;
+}
 
-
+int eval_const_expression(int **ast)
+{
+	int id;
+	id=*(ast);
+	if(id==SYM_NEGATE)
+		return -eval_const_expression(*(ast+1));
+	else if(id==SYM_CONSTANT)
+		return *(ast+1);
+	else 
+		error("expected const expression to be calculatable");
+}
 
 
 

@@ -1,7 +1,7 @@
 IDIR = ./hdr
 ODIR = ./obj
 CC = gcc
-CFLAGS = -I$(IDIR) -std=gnu99 -c -Wno-int-conversion -Wno-pointer-to-int-cast -Wno-incompatible-pointer-types
+CFLAGS = -I$(IDIR) -m32 -std=gnu99 -c -Wno-int-conversion -Wno-pointer-to-int-cast -Wno-incompatible-pointer-types
 
 vpath %.c ./src
 vpath %.h $(IDIR)
@@ -16,7 +16,9 @@ $(ODIR)/errorhandling.o : errorhandling.c
 	$(CC) $(CFLAGS) -o $@ $<
 	
 $(ODIR)/symbols.o : symbols.c 
-	$(CC) $(CFLAGS) -o $@ $<
+	./sccc.sh  $< 2>/dev/null
+	cp ./tmp.o $@
+	#$(CC) $(CFLAGS) -o $@ $<
 	
 $(ODIR)/node.o : node.c 
 	$(CC) $(CFLAGS) -o $@ $<
@@ -40,7 +42,7 @@ $(ODIR)/main.o : main.c lexer.h symbols.h parser.h eval.h
 	$(CC) $(CFLAGS) -o $@ $<
 	
 compiler : $(OBJ) $(ODIR)/x86-gen.o
-	$(CC) -o $@ $^
+	$(CC) -m32 -o $@ $^
 	
 ifeq ($(OS),Windows_NT)  
 clean :

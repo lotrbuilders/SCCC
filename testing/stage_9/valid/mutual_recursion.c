@@ -18,5 +18,5 @@ int bar(int b) {
         return b;
     }
 
-    return b + bar(b / 2);
+    return b + bar(b - 2);
 }

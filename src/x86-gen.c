@@ -19,6 +19,24 @@ int gen_function_epilog()
 	
 }
 
+int gen_extern(char *name)
+{
+	printf("extern %s\n",name);
+	return 0;
+}
+
+int gen_common(char *name)
+{
+	printf("common %s 4:4\n",name);
+	return 0;
+}
+int gen_decleration(char *name,int value)
+{
+	printf("global %s\n",name);
+	printf("%s: dd %d\n",name,value);
+	return 0;
+}
+
 int gen_label(int label_count)
 {
 	
@@ -46,6 +64,12 @@ int gen_pop()
 int gen_push_constant(int constant)
 {
 	printf("\tpush %d\n",constant);
+	return 0;
+}
+
+int gen_dup()
+{
+	puts("\tpush eax");
 	return 0;
 }
 
@@ -179,9 +203,29 @@ int gen_local_var(int location)
 	return 0;
 }
 
+int gen_global_var(char *name)
+{
+	puts("\tpush eax");
+	printf("\tmov eax,[%s]\n",name);
+	return 0;
+}
+
 int gen_local_address(int location)
 {
 	puts("\tpush eax");
 	printf("\tlea eax,[ebp-%d]\n",location+4);
+	return 0;
+}
+
+int gen_global_address(char *name)
+{
+	puts("\tpush eax");
+	printf("\tlea eax,[%s]\n",name);
+	return 0;
+}
+
+int gen_function_call(char *name)
+{
+	printf("\tcall %s\n",name);
 	return 0;
 }
