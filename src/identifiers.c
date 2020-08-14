@@ -45,7 +45,7 @@ int leave_block(int reset_stack)
 
 int add_global(char *name,int type)
 {
-	fprintf(stderr,"added global identifier %s\n",name);
+	fprintf(stderr,"added global identifier %s with type %d\n",name,type);
 	int **entry;
 	entry=newnode(4);
 	*entry=i_strdup(name);
@@ -147,3 +147,41 @@ int locate_identifier(char *name)
 		}
 	return 0;
 }
+
+int find_local_type(char *name)
+{
+	int **list;
+	int **block;
+	for(block=local_block;block!=0;block=*(block+1))
+		for(list=*block;list!=0;list=*(list+1))
+		{
+			if(strcmp(name,*list)==0)
+			{
+				return *(list+2);
+			}
+		}
+	return -1;
+}
+
+int find_global_type(char *name)
+{
+	int **list;
+	for(list=global_list;list!=0;list=*(list+1))
+	{
+		fprintf(stderr,"\tcompare globals %s & %s\n",*list,name);
+		if(strcmp(name,*list)==0)
+			return *(list+2);
+	}
+	return -1;
+	
+}
+
+int find_id_type(char *name)
+{
+	int type= find_local_type(name);
+	if(type==-1)
+		type=find_global_type(name);
+	fprintf(stderr,"type of %s is %d\n",name,type);
+	return type;
+}
+

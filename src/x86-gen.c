@@ -119,11 +119,14 @@ int gen_jmp(int label_count)
 	
 }
 
-int gen_assign()
+int gen_assign(int size)
 {
 	puts("\tmov ebx,eax");
 	puts("\tmov eax,[esp]");
-	puts("\tmov [ebx],eax");
+	if(size==4)
+		puts("\tmov [ebx],eax");
+	else if(size==1)
+		puts("\tmov [ebx],al");
 	return 0;
 }
 
@@ -187,10 +190,12 @@ int gen_negate()
 	
 }
 
-int gen_pointer()
+int gen_pointer(int size)
 {
-	
-	puts("\tmov eax,[eax]");
+	if(size==4)
+		puts("\tmov eax,[eax]");
+	else if(size==1)
+		puts("\tmovsx eax,BYTE [eax]");
 	return 0;
 	
 }
@@ -204,17 +209,25 @@ int gen_constant(int constant)
 	
 }
 
-int gen_local_var(int location)
+int gen_local_var(int location,int size)
 {
 	puts("\tpush eax");
-	printf("\tmov eax,[ebp-%d]\n",location+4);
+	if(size==4)
+		printf("\tmov eax,[ebp-%d]\n",location+4);
+	else if(size==1)
+		printf("\tmovsx eax,BYTE [ebp-%d]\n",location+4);
 	return 0;
 }
 
-int gen_global_var(char *name)
+
+int gen_global_var(char *name,int size)
 {
 	puts("\tpush eax");
-	printf("\tmov eax,[%s]\n",name);
+	if(size==4)
+		printf("\tmov eax,[%s]\n",name);
+	else if(size==1)
+		printf("\tmovsx eax,BYTE [%s]\n",name);
+	
 	return 0;
 }
 
@@ -235,5 +248,18 @@ int gen_global_address(char *name)
 int gen_function_call(char *name)
 {
 	printf("\tcall %s\n",name);
+	return 0;
+}
+
+int gen_string(char *str,int count)
+{
+	printf(".string%d: db '%s',0\n",count,str);
+	return 0;
+}
+
+int gen_load_string(int count)
+{
+	puts("\tpush eax");
+	printf("\tmov eax,.string%d\n",count);
 	return 0;
 }

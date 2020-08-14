@@ -1,34 +1,23 @@
+extern puts
+extern malloc
 global main:function (main.end-main)
 main:
 	push ebp
 	mov ebp,esp
 	pop eax
 	push eax
-	mov eax,4
+	mov eax,.string0
 	push eax
 	pop eax
 	push eax
-	lea eax,[ebp-4]
-	push eax
 	pop eax
 	push eax
-	lea eax,[ebp-8]
+	mov eax,[ebp-4]
 	push eax
-	pop eax
-	push eax
-	mov eax,8
-	push eax
-	mov eax,[ebp-12]
-	mov eax,[eax]
-	mov ebx,eax
-	mov eax,[esp]
-	mov [ebx],eax
-	pop eax
-	push eax
-	mov eax,[ebp-12]
-	mov eax,[eax]
-	mov eax,[eax]
+	call puts
+	add esp,4
 	mov esp,ebp
 	pop ebp
 	ret
 .end:
+.string0: db 'Hello world',0

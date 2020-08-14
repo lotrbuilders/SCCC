@@ -5,5 +5,6 @@ int isvalid(char *name);
 int isglobal(char *name);
 int islocal(char *name);
 int locate_identifier(char *name);
+int find_id_type(char *name);
 int enter_block();
 int leave_block(int reset_stack);

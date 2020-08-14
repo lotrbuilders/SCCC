@@ -71,7 +71,7 @@ int lex_id(int c)
 	if(strcmp(lexed_string,"int")==0)
 		return SYM_INT;
 	else if(strcmp(lexed_string,"char")==0)
-		return SYM_INT;
+		return SYM_CHAR;
 	else if(strcmp(lexed_string,"if")==0)
 		return SYM_IF;
 	else if(strcmp(lexed_string,"else")==0)
@@ -82,6 +82,8 @@ int lex_id(int c)
 		return SYM_WHILE;
 	else if(strcmp(lexed_string,"return")==0)
 		return SYM_RETURN;
+	else if(strcmp(lexed_string,"sizeof")==0)
+		return SYM_SIZEOF;
 	else 
 	{
 		return SYM_ID;
@@ -107,7 +109,7 @@ int lex_num(int c)
 
 int lex_punct(int c)
 {
-	if((c==';')||(c=='(')||(c==')')||(c=='{')||(c=='}')||(c=='-')||(c=='+')||(c=='*')||(c==',')||(c=='*')||(c=='&'))
+	if((c==';')||(c=='(')||(c==')')||(c=='{')||(c=='}')||(c=='-')||(c=='+')||(c=='*')||(c==',')||(c=='*'))
 		return c;
 	else if(c=='<')
 	{
@@ -155,6 +157,8 @@ int lex_char()
 			lexed_number='\n';
 		else if(c=='\\')
 			lexed_number=c;
+		else if(c=='\'')
+			lexed_number=c;
 		else
 			error("unknown char whilst parsing character constant after \\ mark");
 	}
@@ -171,6 +175,28 @@ int lex_char()
 
 int lex_string()
 {
-	error("string not implemented yet");
+	int c;
+	int i=0;
+	for(c=nextc();(c!='"')&&(i<31);c=nextc())
+	{
+		if(c=='\\')
+		{
+			c=nextc();
+			if(c=='n')
+				*(lexed_string+i)='\n';
+			else if(c=='t')
+				*(lexed_string+i)='\t';
+			else if(c=='\\')
+				*(lexed_string+i)=c;
+			else if(c=='"')
+				*(lexed_string+i)=c;
+			else
+				error("unknown char whilst parsing character constant after \\ mark");
+		}
+		else 
+			*(lexed_string+i)=c;
+		i=i+1;
+	}
+	return SYM_STRING;
 }
 

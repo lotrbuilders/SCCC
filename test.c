@@ -1,8 +1,7 @@
+int puts(char *str);
+char *malloc(int size);
 
 int main() {
-	int i=4;
-	int *p=&i;
-	int **pp=&p;
-	**pp=8;
-	return **pp;
+	char *str="Hello world";
+    return puts(str);
 }

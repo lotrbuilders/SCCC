@@ -1,6 +1,7 @@
 int SYM_EOF;
 
 int SYM_INT;
+int SYM_CHAR;
 
 int SYM_RETURN;
 int SYM_IF;
@@ -10,6 +11,7 @@ int SYM_WHILE;
 
 int SYM_ID;
 int SYM_CONSTANT;
+int SYM_STRING;
 
 int SYM_FUNC_DEF;
 int SYM_FUNC_DECL;
@@ -27,6 +29,7 @@ int SYM_LOR;
 int SYM_LAND;
 int SYM_POINTER;
 int SYM_ADDRESS;
+int SYM_SIZEOF;
 
 int SYM_STATEMENT_LIST;
 int SYM_DECLARATION;

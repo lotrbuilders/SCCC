@@ -2,7 +2,11 @@
 #include "errorhandling.h"
 #include "symbols.h"
 #include "identifiers.h"
+#include "type.h"
 #include <stdio.h>
+
+int **newnode(int size);
+char *i_strdup(char *str);
 
 int eval_global(int **ast);
 int eval_function_arguments(int **ast,int loc);
@@ -14,7 +18,13 @@ int eval_lvalue(int **ast);
 int eval_func_call(int **ast);
 int eval_const_expression(int **ast);
 
+int add_string(char *name,int count);
+int eval_string(int **list);
+
 int global_label_count=0;
+int string_count=0;
+int **string_list=0;
+
 
 int eval(int **ast)
 {
@@ -52,12 +62,16 @@ int eval_global(int **ast)
 		pop_count=leave_block(0);
 		gen_function_epilog();
 		leave_block(1);
+		eval_string(string_list);
+		string_count=0;
+		//free_string(string_list);
+		string_list=0;
 	}
 	else if(id==SYM_FUNC_DECL)
 		gen_extern(*(ast+1));
 	else if(id==SYM_GLOBAL_DECL)
 	{
-		add_global(*(ast+1),*(ast+2));
+		add_global(*(ast+1),(*(ast+4)));
 		gen_common(*(ast+1));
 	}
 	else if(id==SYM_GLOBAL_DEF)
@@ -65,7 +79,7 @@ int eval_global(int **ast)
 		int val;
 		val=eval_const_expression(*(ast+2));
 		gen_decleration(*(ast+1),val);
-		add_global(*(ast+1),*(ast+2));
+		add_global(*(ast+1),(*(ast+4)));
 	}
 	else
 		error("unexpected symbol in eval-global");
@@ -193,18 +207,17 @@ int eval_statement(int **ast)
 		label_end=label_begin+1;
 		global_label_count=label_end+1;
 		
-		eval_expression(*(ast+1));
 		gen_pop();
+		eval_expression(*(ast+1));
 		gen_label(label_begin);
+		gen_pop();
 		eval_expression(*(ast+2));
 		gen_jz(label_end);
-		gen_pop();
 		eval_statement(*(ast+4));
 		eval_expression(*(ast+3));
 		gen_pop();
 		gen_jmp(label_begin);
 		gen_label(label_end);
-		gen_pop();
 	}
 	else
 	{
@@ -242,6 +255,8 @@ int eval_expression(int **ast)
 		return debug_warning("ast==NULL in eval-expression");
 	
 	int id;
+	int left_type;
+	int right_type;
 	id=*ast;
 	if(id==SYM_CONSTANT)
 	{
@@ -251,13 +266,18 @@ int eval_expression(int **ast)
 	{
 		if(isvalid(*(ast+1)))
 		{
+			int size=4;
+			int type=find_id_type(*(ast+1));
+			fprintf(stderr,"type %d\n",type);
+			if(type==TYPE_CHAR)
+				size=1;
 			if(isglobal(*(ast+1)))
-				gen_global_var(*(ast+1));
+				gen_global_var(*(ast+1),size);
 			else
 			{
 				int loc;
 				loc=locate_identifier(*(ast+1));
-				gen_local_var(loc);
+				gen_local_var(loc,size);
 			}
 		}
 		else
@@ -267,6 +287,14 @@ int eval_expression(int **ast)
 		}
 		
 	}
+	else if(id==SYM_STRING)
+	{
+		
+		gen_load_string(string_count);
+		add_string(*(ast+1),string_count);
+		fprintf(stderr,"name:%s\n",*(ast+1));
+		string_count=string_count+1;
+	}
 	else if(id==SYM_NEGATE)
 	{
 		eval_expression(*(ast+1));
@@ -274,8 +302,12 @@ int eval_expression(int **ast)
 	}
 	else if(id==SYM_POINTER)
 	{
+		int size=4;
+		int type=find_type(*(ast+1));
+		if(type==TYPE_CHARPTR)
+			size=1;
 		eval_expression(*(ast+1));
-		gen_pointer();
+		gen_pointer(size);
 	}
 	else if(id==SYM_ADDRESS)
 	{
@@ -296,14 +328,44 @@ int eval_expression(int **ast)
 	}
 	else if(id=='+')
 	{
+		left_type=find_type(*(ast+1));
+		right_type=find_type(*(ast+2));
 		eval_expression(*(ast+2));
+		if((left_type>=TYPE_INTPTR)&&(right_type==TYPE_INT))
+		{
+			if((left_type-TYPE_INTPTR)!=TYPE_CHAR)
+			{
+				gen_constant(4);
+				gen_multiply();
+			}
+		}
 		eval_expression(*(ast+1));
+		if((right_type>=TYPE_INTPTR)&&(left_type==TYPE_INT))
+		{
+			if((right_type-TYPE_INTPTR)!=TYPE_CHAR)
+			{
+				gen_constant(4);
+				gen_multiply();
+			}
+		}
 		gen_add();
 	}
 	else if(id=='-')
 	{
+		left_type=find_type(*(ast+1));
+		right_type=find_type(*(ast+2));
 		eval_expression(*(ast+2));
+		if((left_type>TYPE_INT)&&(right_type==TYPE_INT))
+		{
+			gen_constant(4);
+			gen_multiply();
+		}
 		eval_expression(*(ast+1));
+		if((right_type>TYPE_INT)&&(left_type==TYPE_INT))
+		{
+			gen_constant(4);
+			gen_multiply();
+		}
 		gen_subtract();
 	}
 	else if((id=='>')||(id=='<')||(id==SYM_LE)||(id==SYM_GE)||(id==SYM_EQ)||(id==SYM_NE))
@@ -336,9 +398,13 @@ int eval_expression(int **ast)
 	}
 	else if(id=='=')
 	{
+		int size=4;
+		int type=find_lvalue_type(*(ast+1));
+		if(type==TYPE_CHAR)
+			size=1;
 		eval_expression(*(ast+2));
 		eval_lvalue(*(ast+1));
-		gen_assign();
+		gen_assign(size);
 	}
 	else 
 		error("unexpected symbol in eval-expression");
@@ -425,7 +491,26 @@ int eval_const_expression(int **ast)
 		error("expected const expression to be calculatable");
 }
 
+int add_string(char *name,int count)
+{
+	int **entry;
+	entry=newnode(3);
+	*entry=i_strdup(name);
+	*(entry+1)=count;
+	*(entry+2)=string_list;
+	string_list=entry;
+	return 0;
+}
 
+int eval_string(int **list)
+{
+	int **entry;
+	for(entry=list;entry!=0;entry=*(entry+2))
+	{
+		gen_string(*entry,*(entry+1));
+	}
+	return 0;
+}
 
 
 

@@ -23,10 +23,10 @@ $(ODIR)/symbols.o : symbols.c
 $(ODIR)/node.o : node.c 
 	$(CC) $(CFLAGS) -o $@ $<
 	
-$(ODIR)/type.o : type.c 
+$(ODIR)/identifiers.o : identifiers.c 
 	$(CC) $(CFLAGS) -o $@ $<
 	
-$(ODIR)/identifiers.o : identifiers.c 
+$(ODIR)/type.o : type.c identifiers.h symbols.h errorhandling.h
 	$(CC) $(CFLAGS) -o $@ $<
 	
 $(ODIR)/lexer.o : lexer.c errorhandling.h symbols.h lexer.h node.h
@@ -35,7 +35,7 @@ $(ODIR)/lexer.o : lexer.c errorhandling.h symbols.h lexer.h node.h
 $(ODIR)/parser.o : parser.c errorhandling.h symbols.h parser.h type.h
 	$(CC) $(CFLAGS) -o $@ $<
 	
-$(ODIR)/eval.o : eval.c errorhandling.h eval.h gen.h identifiers.h
+$(ODIR)/eval.o : eval.c errorhandling.h eval.h gen.h identifiers.h type.h
 	$(CC) $(CFLAGS) -o $@ $<
 
 $(ODIR)/x86-gen.o : x86-gen.c symbols.h

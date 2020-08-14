@@ -32,5 +32,6 @@ int main()
 		printf("Token %d\n",tk);*/
 	ast=parse();
 	eval(ast);
+	
 	return 0;
 }

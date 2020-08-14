@@ -267,7 +267,7 @@ int **parse_statement()
 	int pk=peek();
 	if(pk==SYM_RETURN)
 		node=parse_jump_statement();
-	else if(pk==SYM_INT)
+else if((pk==SYM_INT)||(pk==SYM_CHAR))
 		node=parse_local_decleration();
 	else if(pk==SYM_IF)
 		node=parse_selection_statement();
@@ -328,7 +328,7 @@ int **parse_decleration()
 	int **node;
 	node=0;
 	
-	if(peek()==SYM_INT)
+	if((peek()==SYM_INT)||(peek()==SYM_CHAR))
 	{
 		int **declerator;
 		int type;
@@ -768,6 +768,26 @@ int **parse_unary_expression()
 		*ast=SYM_ADDRESS;
 		*(ast+1)=parse_unary_expression();
 	}
+	else if(peek()==SYM_SIZEOF)
+	{
+		if(PARSER_DEBUG)
+			fprintf(stderr,"parsed sizeof\n");
+		
+		int size=4;
+		pop();
+		expect('(');
+		if(pop()==SYM_CHAR)
+			size=1;
+		while(peek()=='*')
+		{
+			size=4;
+			pop();
+		}
+		expect(')');
+		ast=newnode(2);
+		*ast=SYM_CONSTANT;
+		*(ast+1)=size;
+	}
 	else
 		ast=parse_postfix_expression();
 	
@@ -831,7 +851,10 @@ int **parse_expression_list()
 
 /*
 	primary-expression :=
+		( expression )
 		CONSTANT
+		ID
+		STRING
 */
 int **parse_primary_expression()
 {
@@ -847,6 +870,12 @@ int **parse_primary_expression()
 		expect(')');
 	}
 	else if(peek()==SYM_ID)
+	{
+		node=newnode(2);
+		*node=pop();
+		*(node+1)=i_strdup(lexed_string);
+	}
+	else if(peek()==SYM_STRING)
 	{
 		node=newnode(2);
 		*node=pop();
