@@ -7,7 +7,7 @@
 
 int **local_block=0;
 int **global_list=0;
-int stack_loc=4;
+int stack_loc=4;//Backend assumption
 
 int free_locals(int **local_list);
 char *i_strdup(char *str);
@@ -41,7 +41,7 @@ int leave_block(int reset_stack)
 	count=free_locals(*local_block);
 	stack_loc=stack_loc-count;
 	if(reset_stack)
-		stack_loc=4;
+		stack_loc=4;//Backend assumption
 	local_block=*(local_block+1);
 	return count;
 	
@@ -76,7 +76,7 @@ int add_identifier(char *name,int type)
 	*(entry+1)=*local_block;
 	*(entry+2)=type;
 	*(entry+3)=stack_loc;
-	stack_loc=stack_loc+4;
+	stack_loc=stack_loc+4;//Backend assumption
 	*local_block=entry;
 	return 0;
 }

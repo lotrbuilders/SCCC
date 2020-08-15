@@ -6,13 +6,13 @@ int in_main;
 
 int gen_prolog()
 {
-	puts("\tsection .data");
-	
+	puts("section .data");
+	return 0;
 }
 
 int gen_function_prolog(char *name)
 {
-	puts("\tsection .text");
+	puts("\nsection .text");
 	printf("global %s:function (%s.end-%s)\n%s:\n",name,name,name,name);
 	
 	if(strcmp("main",name)==0)
@@ -39,8 +39,8 @@ int gen_function_prolog(char *name)
 
 int gen_function_epilog(char *name)
 {
-	puts(".end:");
-	puts("\tsection .data");
+	puts(".end:\n");
+	puts("section .data");
 	return 0;
 	
 }

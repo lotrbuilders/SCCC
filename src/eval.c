@@ -65,19 +65,20 @@ int eval_global(int **ast)
 		if(EVAL_GLOBAL_DEBUG)
 			fprintf(stderr,"function defenition %s\n",*(ast+1));
 		enter_block();
-		eval_function_arguments(*(ast+3),-12);
+		eval_function_arguments(*(ast+3),-12);//Backend assumption
 		int pop_count;
 		gen_function_prolog(*(ast+1));
 		enter_block();
 		if(strcmp("main",*(ast+1))==0)
-			stack_loc=12;
+			stack_loc=12;//Backend assumption
 		eval_statements(*(ast+2));
 		pop_count=leave_block(0);
 		gen_function_epilog();
 		leave_block(1);
 		eval_string(string_list);
 		string_count=0;
-		//free_string(string_list);
+		global_label_count=0;
+		//free_string(string_list);//Implement free_string
 		string_list=0;
 	}
 	else if(id==SYM_FUNC_DECL)
@@ -127,7 +128,7 @@ int eval_function_arg(int **ast,int loc)
 int eval_function_arguments(int **ast,int loc)
 {
 	if(ast==0)
-		return -12;
+		return -12;//Backend assumption
 	if(EVAL_GLOBAL_DEBUG)
 		fprintf(stderr,"evaluating function argment list\n");
 	int id;
@@ -135,8 +136,8 @@ int eval_function_arguments(int **ast,int loc)
 	if(id!=SYM_DECL_LIST)
 		error("Expected decleration list");
 	eval_function_arg(*(ast+1),loc);
-	loc=eval_function_arguments(*(ast+2),loc-4);
-	loc=loc-4;
+	loc=eval_function_arguments(*(ast+2),loc-4);//Backend assumption
+	loc=loc-4;//Backend assumption
 	return loc;
 }
 
@@ -402,7 +403,7 @@ int eval_expression(int **ast)
 		{
 			if((left_type-TYPE_INTPTR)!=TYPE_CHAR)
 			{
-				gen_constant(4);
+				gen_constant(4);//Backend assumption
 				gen_multiply();
 			}
 		}
@@ -411,7 +412,7 @@ int eval_expression(int **ast)
 		{
 			if((right_type-TYPE_INTPTR)!=TYPE_CHAR)
 			{
-				gen_constant(4);
+				gen_constant(4);//Backend assumption
 				gen_multiply();
 			}
 		}
@@ -426,13 +427,13 @@ int eval_expression(int **ast)
 		eval_expression(*(ast+2));
 		if((left_type>TYPE_INT)&&(right_type==TYPE_INT))
 		{
-			gen_constant(4);
+			gen_constant(4);//Backend assumption
 			gen_multiply();
 		}
 		eval_expression(*(ast+1));
 		if((right_type>TYPE_INT)&&(left_type==TYPE_INT))
 		{
-			gen_constant(4);
+			gen_constant(4);//Backend assumption
 			gen_multiply();
 		}
 		gen_subtract();
@@ -475,7 +476,7 @@ int eval_expression(int **ast)
 	{
 		if(EVAL_EXPRESSION_DEBUG)
 			fprintf(stderr,"evaluating assignment\n");
-		int size=4;
+		int size=4;//Backend assumption
 		int type=find_lvalue_type(*(ast+1));
 		if(type==TYPE_CHAR)
 			size=1;
@@ -574,8 +575,8 @@ int eval_func_call(int **ast)
 	child=*(ast+1);
 	name=*(child+1);
 	
-	sp=4*count_arguments(*(ast+2))+stack_loc+8-8*in_main;
-	for(padding=sp;padding>16;padding=padding-16) 1;
+	sp=4*count_arguments(*(ast+2))+stack_loc+8-8*in_main;//Heavy Backend assumptions
+	for(padding=sp;padding>16;padding=padding-16) 1;//Backend assumption and not needed for lots of implementations
 	
 	gen_subtract_sp(-padding);
 	offset=eval_func_arg(*(ast+2));

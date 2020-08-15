@@ -1,10 +1,13 @@
-int **a=0;
-
-char *malloc(int size);
+int a()
+{
+	if(1)
+		return 2;
+	else return *"Hello";
+}
 
 int main()
 {
-	a=malloc(sizeof(int *));
-	*a=1;
-	return *a;
+	if(2)
+		return a();
+	else return *"bye";
 }
