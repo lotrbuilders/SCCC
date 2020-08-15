@@ -2,7 +2,13 @@
 #include <string.h>
 #include "symbols.h"
 
-char *in_main;
+int in_main;
+
+int gen_prolog()
+{
+	puts("\tsection .data");
+	
+}
 
 int gen_function_prolog(char *name)
 {

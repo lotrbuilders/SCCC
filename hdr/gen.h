@@ -1,3 +1,4 @@
+int gen_prolog();
 int gen_function_prolog(char *name);
 int gen_function_epilog();
 int gen_extern(char *name);

@@ -28,12 +28,16 @@ int string_count=0;
 int **string_list=0;
 int stack_loc;
 
+int EVAL_GLOBAL_DEBUG;
+int EVAL_STATEMENT_DEBUG;
+int EVAL_EXPRESSION_DEBUG;
 
 int eval(int **ast)
 {
-	printf("section .data\n");
 	if(ast==0)
 		return debug_warning("ast==NULL in eval");
+	if(EVAL_GLOBAL_DEBUG)
+		fprintf(stderr,"Evaluating at top\n");
 	int id;
 	id=*ast;
 	if(id==0)
@@ -52,14 +56,16 @@ int eval_global(int **ast)
 {
 	if(ast==0)
 		return debug_warning("ast==NULL in eval-global");
-	
+	if(EVAL_GLOBAL_DEBUG)
+		fprintf(stderr,"Evaluating global ");
 	int id;
 	id=*ast;
 	if(id==SYM_FUNC_DEF)
 	{
+		if(EVAL_GLOBAL_DEBUG)
+			fprintf(stderr,"function defenition %s\n",*(ast+1));
 		enter_block();
 		eval_function_arguments(*(ast+3),-12);
-		fprintf(stderr,"eval_function_def\n");
 		int pop_count;
 		gen_function_prolog(*(ast+1));
 		enter_block();
@@ -75,14 +81,22 @@ int eval_global(int **ast)
 		string_list=0;
 	}
 	else if(id==SYM_FUNC_DECL)
+	{
+		if(EVAL_GLOBAL_DEBUG)
+			fprintf(stderr,"function decleration %s\n",*(ast+1));
 		gen_extern(*(ast+1));
+	}
 	else if(id==SYM_GLOBAL_DECL)
 	{
+		if(EVAL_GLOBAL_DEBUG)
+			fprintf(stderr,"variable decleration %s\n",*(ast+1));
 		add_global(*(ast+1),(*(ast+4)));
 		gen_common(*(ast+1));
 	}
 	else if(id==SYM_GLOBAL_DEF)
 	{
+		if(EVAL_GLOBAL_DEBUG)
+			fprintf(stderr,"variable defenition %s\n",*(ast+1));
 		int val;
 		val=eval_const_expression(*(ast+2));
 		gen_decleration(*(ast+1),val);
@@ -97,8 +111,11 @@ int eval_function_arg(int **ast,int loc)
 {
 	if(ast==0)
 		return debug_warning("ast==NULL in eval-function-arg");
+	if(EVAL_GLOBAL_DEBUG)
+		fprintf(stderr,"evaluating function argument %s\n",*(ast+2));
 	int id;
 	id=*ast;
+	
 	if(id==SYM_DECLARATION)
 	{
 		add_argument_identifier(*(ast+2),*(ast+1),loc);
@@ -111,6 +128,8 @@ int eval_function_arguments(int **ast,int loc)
 {
 	if(ast==0)
 		return -12;
+	if(EVAL_GLOBAL_DEBUG)
+		fprintf(stderr,"evaluating function argment list\n");
 	int id;
 	id=*ast;
 	if(id!=SYM_DECL_LIST)
@@ -124,6 +143,8 @@ int eval_function_arguments(int **ast,int loc)
 int eval_statements(int **ast)
 {
 	int **node;
+	if(EVAL_GLOBAL_DEBUG)
+		fprintf(stderr,"evaluating statement list\n");
 	for(node=ast;node!=0;node=*(node+2))
 	{
 		int id=*node;
@@ -145,16 +166,22 @@ int eval_statement(int **ast)
 	id=*ast;
 	if(id==SYM_RETURN)
 	{
+		if(EVAL_STATEMENT_DEBUG)
+			fprintf(stderr,"evaluating return statement\n");
 		gen_pop();
 		eval_expression(*(ast+1));
 		gen_return();
 	}
 	else if(id==SYM_LOCAL_DECLARATION)
 	{
+		if(EVAL_STATEMENT_DEBUG)
+			fprintf(stderr,"evaluating local decleration\n");
 		eval_decleration(ast);
 	}
 	else if(id==SYM_COMPOUND_STATEMENT)
 	{
+		if(EVAL_STATEMENT_DEBUG)
+			fprintf(stderr,"evaluating compound statement\n");
 		int count;
 		enter_block();
 		eval_statements(*(ast+1));
@@ -163,6 +190,8 @@ int eval_statement(int **ast)
 	}
 	else if(id==SYM_IF)
 	{
+		if(EVAL_STATEMENT_DEBUG)
+			fprintf(stderr,"evaluating if statement\n");
 		int if_label;
 		int else_label;
 		
@@ -179,6 +208,8 @@ int eval_statement(int **ast)
 		
 		if(*(ast+3)!=0)
 		{
+			if(EVAL_STATEMENT_DEBUG)
+				fprintf(stderr,"evaluating else statement\n");
 			gen_jmp(else_label);
 			gen_label(if_label);
 			eval_statement(*(ast+3));
@@ -190,6 +221,8 @@ int eval_statement(int **ast)
 	}
 	else if(id==SYM_WHILE)
 	{
+		if(EVAL_STATEMENT_DEBUG)
+				fprintf(stderr,"evaluating while statement\n");
 		int label_begin;
 		int label_end;
 		
@@ -207,6 +240,8 @@ int eval_statement(int **ast)
 	}
 	else if(id==SYM_FOR)
 	{
+		if(EVAL_STATEMENT_DEBUG)
+				fprintf(stderr,"evaluating for statement\n");
 		int label_begin;
 		int label_end;
 		
@@ -228,6 +263,8 @@ int eval_statement(int **ast)
 	}
 	else
 	{
+		if(EVAL_STATEMENT_DEBUG)
+			fprintf(stderr,"evaluating expression statement\n");
 		gen_pop();
 		eval_expression(ast);
 		//gen_pop();
@@ -238,10 +275,9 @@ int eval_statement(int **ast)
 
 int eval_decleration(int **ast)
 {
+	if(EVAL_STATEMENT_DEBUG)
+		fprintf(stderr,"evaluating decleration\n");
 	int **child=*(ast+1);
-	fprintf(stderr,"ast:%p|%d\n",ast,*ast);
-	fprintf(stderr,"child:%p|%d\n",child,*child);
-	fprintf(stderr,"child id:%s\n",*(child+2));
 	add_identifier(*(child+2),*(child+1));
 	if(*(ast+2)==0)
 		gen_push_constant(0);
@@ -256,8 +292,9 @@ int eval_decleration(int **ast)
 
 int eval_expression(int **ast)
 {
+	if(EVAL_EXPRESSION_DEBUG)
+		fprintf(stderr,"evaluating expression\n");
 	int label_count;
-	
 	if(ast==0)
 		return debug_warning("ast==NULL in eval-expression");
 	
@@ -267,22 +304,33 @@ int eval_expression(int **ast)
 	id=*ast;
 	if(id==SYM_CONSTANT)
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating constant %d\n",*(ast+1));
 		gen_constant(*(ast+1));
 	}
 	else if(id==SYM_ID)
 	{
-		fprintf(stderr,"eval id %s\n",*(ast+1));
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating id %s\n",*(ast+1));
 		if(isvalid(*(ast+1)))
 		{
 			int size=4;
 			int type=find_id_type(*(ast+1));
-			fprintf(stderr,"type %d\n",type);
+			if(EVAL_EXPRESSION_DEBUG)
+				fprintf(stderr,"type of %s is %d\n",*(ast+1),type);
 			if(type==TYPE_CHAR)
 				size=1;
+			
 			if(islocal(*(ast+1))==0)
+			{
+				if(EVAL_EXPRESSION_DEBUG)
+					fprintf(stderr,"%s is local\n",*(ast+1));
 				gen_global_var(*(ast+1),size);
+			}
 			else
 			{
+				if(EVAL_EXPRESSION_DEBUG)
+					fprintf(stderr,"%s is global\n",*(ast+1));
 				int loc;
 				loc=locate_identifier(*(ast+1));
 				gen_local_var(loc,size);
@@ -297,18 +345,23 @@ int eval_expression(int **ast)
 	}
 	else if(id==SYM_STRING)
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating string \"%s\"\n",*(ast+1));
 		gen_load_string(string_count);
 		add_string(*(ast+1),string_count);
-		fprintf(stderr,"string:%s\n",*(ast+1));
 		string_count=string_count+1;
 	}
 	else if(id==SYM_NEGATE)
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating negate\n");
 		eval_expression(*(ast+1));
 		gen_negate();
 	}
 	else if(id==SYM_POINTER)
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating pointer\n");
 		int size=4;
 		int type=find_type(*(ast+1));
 		if(type==TYPE_CHARPTR)
@@ -318,16 +371,21 @@ int eval_expression(int **ast)
 	}
 	else if(id==SYM_ADDRESS)
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating address\n");
 		eval_lvalue(*(ast+1));
 	}
 	else if(id==SYM_FUNC_CALL)
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating function call\n");
 		gen_dup();
 		eval_func_call(ast);
-		
 	}
 	else if(id=='*')
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating multiply\n");
 		eval_expression(*(ast+2));
 		eval_expression(*(ast+1));
 		gen_multiply();
@@ -335,6 +393,8 @@ int eval_expression(int **ast)
 	}
 	else if(id=='+')
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating addition\n");
 		left_type=find_type(*(ast+1));
 		right_type=find_type(*(ast+2));
 		eval_expression(*(ast+2));
@@ -359,6 +419,8 @@ int eval_expression(int **ast)
 	}
 	else if(id=='-')
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating subtraction\n");
 		left_type=find_type(*(ast+1));
 		right_type=find_type(*(ast+2));
 		eval_expression(*(ast+2));
@@ -377,12 +439,16 @@ int eval_expression(int **ast)
 	}
 	else if((id=='>')||(id=='<')||(id==SYM_LE)||(id==SYM_GE)||(id==SYM_EQ)||(id==SYM_NE))
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating comparison\n");
 		eval_expression(*(ast+2));
 		eval_expression(*(ast+1));
 		gen_comparison(id);
 	}
 	else if(id==SYM_LOR)
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating logical or\n");
 		eval_expression(*(ast+1));
 		label_count=global_label_count;
 		gen_jnz(label_count);
@@ -394,6 +460,8 @@ int eval_expression(int **ast)
 	}
 	else if(id==SYM_LAND)
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating logical and\n");
 		eval_expression(*(ast+1));
 		label_count=global_label_count;
 		gen_jz(label_count);
@@ -405,6 +473,8 @@ int eval_expression(int **ast)
 	}
 	else if(id=='=')
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating assignment\n");
 		int size=4;
 		int type=find_lvalue_type(*(ast+1));
 		if(type==TYPE_CHAR)
@@ -422,17 +492,26 @@ int eval_expression(int **ast)
 
 int eval_lvalue(int **ast)
 {
+	if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating lvalue ");
 	if(ast==0)
 		return debug_warning("ast==NULL in eval-expression");
 	int id=*ast;
 	if(id==SYM_ID)
 	{
+		
 		if(isvalid(*(ast+1)))
 		{
-			if(isglobal(*(ast+1)))
+			if(islocal(*(ast+1))==0)
+			{
+				if(EVAL_EXPRESSION_DEBUG)
+					fprintf(stderr,"global id %s\n",*(ast+1));
 				gen_global_address(*(ast+1));
+			}
 			else 
 			{
+				if(EVAL_EXPRESSION_DEBUG)
+					fprintf(stderr,"local id %s\n",*(ast+1));
 				int loc;
 				loc=locate_identifier(*(ast+1));
 				gen_local_address(loc);
@@ -443,6 +522,8 @@ int eval_lvalue(int **ast)
 	}
 	else if(id==SYM_POINTER)
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"pointer\n");
 		eval_expression(*(ast+1));
 	}
 	else 
@@ -492,8 +573,10 @@ int eval_func_call(int **ast)
 	int **child;
 	child=*(ast+1);
 	name=*(child+1);
+	
 	sp=4*count_arguments(*(ast+2))+stack_loc+8-8*in_main;
 	for(padding=sp;padding>16;padding=padding-16) 1;
+	
 	gen_subtract_sp(-padding);
 	offset=eval_func_arg(*(ast+2));
 	gen_function_call(name);
@@ -503,6 +586,8 @@ int eval_func_call(int **ast)
 
 int eval_const_expression(int **ast)
 {
+	if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"evaluating constant expression\n");
 	int id;
 	id=*(ast);
 	if(id==SYM_NEGATE)
@@ -515,6 +600,8 @@ int eval_const_expression(int **ast)
 
 int add_string(char *name,int count)
 {
+	if(EVAL_EXPRESSION_DEBUG)
+		fprintf(stderr,"adding string %s\n",name);
 	int **entry;
 	entry=newnode(3);
 	*entry=i_strdup(name);
@@ -526,9 +613,13 @@ int add_string(char *name,int count)
 
 int eval_string(int **list)
 {
+	if(EVAL_EXPRESSION_DEBUG)
+		fprintf(stderr,"inserting constant strings:\n");
 	int **entry;
 	for(entry=list;entry!=0;entry=*(entry+2))
 	{
+		if(EVAL_EXPRESSION_DEBUG)
+			fprintf(stderr,"\tstring: \"%s\"\n",*entry);
 		gen_string(*entry,*(entry+1));
 	}
 	return 0;

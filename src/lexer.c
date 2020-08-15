@@ -104,7 +104,6 @@ int lex_num(int c)
 		c=nextc();
 	}
 	ungetc(c,stdin);
-	//printf("lexed number %d\n",lexed_number);
 	return SYM_CONSTANT;
 	
 }

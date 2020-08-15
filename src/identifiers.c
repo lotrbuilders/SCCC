@@ -12,6 +12,8 @@ int stack_loc=4;
 int free_locals(int **local_list);
 char *i_strdup(char *str);
 
+int DEBUG_IDENTIFIER;
+
 /*
 	Local block aka stackframe exist out of:
 		pointer to list of locals
@@ -20,7 +22,8 @@ char *i_strdup(char *str);
 
 int enter_block()
 {
-	fprintf(stderr,"enter block\n");
+	if(DEBUG_IDENTIFIER)
+		fprintf(stderr,"enter block\n");
 	int **new_block;
 	new_block=newnode(2);
 	*new_block=0;
@@ -32,7 +35,8 @@ int enter_block()
 
 int leave_block(int reset_stack)
 {
-	fprintf(stderr,"leave block:\n");
+	if(DEBUG_IDENTIFIER)
+		fprintf(stderr,"leave block:\n");
 	int count;
 	count=free_locals(*local_block);
 	stack_loc=stack_loc-count;
@@ -45,7 +49,8 @@ int leave_block(int reset_stack)
 
 int add_global(char *name,int type)
 {
-	fprintf(stderr,"added global identifier %s with type %d\n",name,type);
+	if(DEBUG_IDENTIFIER)
+		fprintf(stderr,"added global identifier %s with type %d\n",name,type);
 	int **entry;
 	entry=newnode(4);
 	*entry=i_strdup(name);
@@ -63,7 +68,8 @@ int add_global(char *name,int type)
 */
 int add_identifier(char *name,int type)
 {
-	fprintf(stderr,"added identifier %s at %d\n",name,stack_loc);
+	if(DEBUG_IDENTIFIER)
+		fprintf(stderr,"added identifier %s at %d\n",name,stack_loc);
 	int **entry;
 	entry=newnode(4);
 	*entry=i_strdup(name);
@@ -77,7 +83,8 @@ int add_identifier(char *name,int type)
 
 int add_argument_identifier(char *name,int type,int loc)
 {
-	fprintf(stderr,"added identifier %s as function argument at%d\n",name,loc);
+	if(DEBUG_IDENTIFIER)
+		fprintf(stderr,"added identifier %s as function argument at%d\n",name,loc);
 	int **entry;
 	char *tmp;
 	entry=newnode(4);
@@ -95,26 +102,27 @@ int free_locals(int **local_list)
 	if(local_list!=0)
 	{
 		int **next=*(local_list+1);
-		fprintf(stderr,"\tremoved %s\n",*local_list);
+		if(DEBUG_IDENTIFIER)
+			fprintf(stderr,"\tremoved %s\n",*local_list);
 		free(*local_list);
 		free(local_list);
 		return free_locals(next)+4;
 	}
-	
 	return 0;
-	
 }
 
 int isvalid(char *name)
 {
 	if(islocal(name))
 	{
-		fprintf(stderr,"%s is local\n",name);
+		if(DEBUG_IDENTIFIER)
+			fprintf(stderr,"%s is local\n",name);
 		return 1;
 	}
 	else if(isglobal(name))
 	{
-		fprintf(stderr,"%s is global\n",name);
+		if(DEBUG_IDENTIFIER)
+			fprintf(stderr,"%s is global\n",name);
 		return 1;
 	}
 	return 0;
@@ -125,7 +133,8 @@ int isglobal(char *name)
 	int **list;
 	for(list=global_list;list!=0;list=*(list+1))
 	{
-		fprintf(stderr,"\tcompare globals %s & %s\n",*list,name);
+		if(DEBUG_IDENTIFIER)
+			fprintf(stderr,"\tcompare globals %s & %s\n",*list,name);
 		if(strcmp(name,*list)==0)
 			return 1;
 	}
@@ -139,7 +148,8 @@ int islocal(char *name)
 	for(block=local_block;block!=0;block=*(block+1))
 		for(list=*block;list!=0;list=*(list+1))
 		{
-			//fprintf(stderr,"\tcompare locals %s & %s\n",*list,name);
+			if(DEBUG_IDENTIFIER)
+				fprintf(stderr,"\tcompare locals %s & %s\n",*list,name);
 			if(strcmp(name,*list)==0)
 				return 1;
 		}
@@ -167,6 +177,8 @@ int find_local_type(char *name)
 	for(block=local_block;block!=0;block=*(block+1))
 		for(list=*block;list!=0;list=*(list+1))
 		{
+			if(DEBUG_IDENTIFIER)
+				fprintf(stderr,"\tcompare locals %s & %s\n",*list,name);
 			if(strcmp(name,*list)==0)
 			{
 				return *(list+2);
@@ -180,7 +192,8 @@ int find_global_type(char *name)
 	int **list;
 	for(list=global_list;list!=0;list=*(list+1))
 	{
-		//fprintf(stderr,"\tcompare globals %s & %s\n",*list,name);
+		if(DEBUG_IDENTIFIER)
+			fprintf(stderr,"\tcompare globals %s & %s\n",*list,name);
 		if(strcmp(name,*list)==0)
 			return *(list+2);
 	}
@@ -193,7 +206,8 @@ int find_id_type(char *name)
 	int type= find_local_type(name);
 	if(type==-1)
 		type=find_global_type(name);
-	fprintf(stderr,"type of %s is %d\n",name,type);
+	if(DEBUG_IDENTIFIER)
+		fprintf(stderr,"type of %s is %d\n",name,type);
 	return type;
 }
 

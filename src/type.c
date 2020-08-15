@@ -8,6 +8,9 @@ int TYPE_CHAR=1;
 int TYPE_INTPTR=256;
 int TYPE_CHARPTR=257;
 int TYPE_PTRPTR=512;
+
+int DEBUG_TYPE;
+
 char *declarator_name(int **ast)
 {
 	char *name;
@@ -46,7 +49,8 @@ int find_type(int **ast)
 	int right_type;
 	int id;
 	id=*ast;
-	
+	if(DEBUG_TYPE)
+		fprintf(stderr,"find type; id=%d\n",id);
 	if(id==SYM_CONSTANT)
 	{
 		return TYPE_INT;
@@ -127,7 +131,8 @@ int find_lvalue_type(int **ast)
 	int right_type;
 	int id;
 	id=*ast;
-	fprintf(stderr,"find lvalue type; id=%d\n",id);
+	if(DEBUG_TYPE)
+		fprintf(stderr,"find lvalue type; id=%d\n",id);
 	
 	if(id==SYM_ID)
 	{
