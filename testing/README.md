@@ -1,3 +1,6 @@
+# C Compiler tests
+SCCC uses the compiler tests as written by Nora Sandler. These have been modified to suit the limitations and extra features of this compiler. Note this file has been edited for SCCC purposes. Since the compiler itself does not follow the requirements of the test script directly, a seperate script 'run.sh' is present, which helps compilation.
+
 # Write a C Compiler!
 
 This is a set of C test programs to help you write your own compiler. They were written to accompany [this tutorial](https://norasandler.com/2017/11/29/Write-a-Compiler.html).
@@ -6,17 +9,17 @@ This is a set of C test programs to help you write your own compiler. They were 
 
 ### test all
 ```
-./test_compiler.sh /path/to/your/compiler
+./test_compiler.sh ./run.sh
 ```
 
 ### test specific stages
 To test stage 1 and stage 3,
 ```
-./test_compiler.sh /path/to/your/compiler 1 3
+./test_compiler.sh ./run.sh 1 3
 ```
 To test from stage 1 to stage 6,
 ```
-./test_compiler.sh /path/to/your/compiler `seq 1 6`
+./test_compiler.sh ./run.sh `seq 1 6`
 ```
 
 In order to use this script, your compiler needs to follow this spec:
