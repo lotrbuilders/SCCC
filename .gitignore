@@ -53,3 +53,10 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+*pp.c
+*test.c
+*tmp.s
+*tmp.o 
+*tmp.out
+*compiler
