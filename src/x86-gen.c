@@ -1,20 +1,40 @@
 #include <stdio.h>
+#include <string.h>
 #include "symbols.h"
+
+char *in_main;
 
 int gen_function_prolog(char *name)
 {
-	
+	puts("\tsection .text");
 	printf("global %s:function (%s.end-%s)\n%s:\n",name,name,name,name);
-	puts("\tpush ebp");
-	puts("\tmov ebp,esp");
+	
+	if(strcmp("main",name)==0)
+	{
+		puts("\tlea ecx, [esp+4]");
+        puts("\tand esp, -16");
+        puts("\tpush DWORD[ecx-4]");
+        puts("\tpush ebp");
+        puts("\tmov ebp, esp");
+        puts("\tpush ecx");
+        puts("\tsub esp, 4");
+		in_main=1;
+	}
+	else
+	{
+		puts("\tpush ebp");
+		puts("\tmov ebp,esp");
+		in_main=0;
+	}
+	puts("\tpush ebx");
 	return 0;
 	
 }
 
-int gen_function_epilog()
+int gen_function_epilog(char *name)
 {
-	
 	puts(".end:");
+	puts("\tsection .data");
 	return 0;
 	
 }
@@ -86,9 +106,21 @@ int gen_normalize()
 int gen_return()
 {
 	
-	puts("\tmov esp,ebp");
-	puts("\tpop ebp");
-	puts("\tret");
+	if(in_main==0)
+	{
+		puts("\tmov ebx,[ebp-4]");
+		puts("\tmov esp,ebp");
+		puts("\tpop ebp");
+		puts("\tret");
+	}
+	else
+	{
+		puts("\tmov ebx,[ebp-12]");
+		puts("\tmov ecx, DWORD[ebp-4]");
+        puts("\tleave");
+        puts("\tlea esp, [ecx-4]");
+        puts("\tret");
+	}
 	return 0;
 	
 }
@@ -122,7 +154,7 @@ int gen_jmp(int label_count)
 int gen_assign(int size)
 {
 	puts("\tmov ebx,eax");
-	puts("\tmov eax,[esp]");
+	puts("\tpop eax");
 	if(size==4)
 		puts("\tmov [ebx],eax");
 	else if(size==1)
@@ -253,7 +285,13 @@ int gen_function_call(char *name)
 
 int gen_string(char *str,int count)
 {
-	printf(".string%d: db '%s',0\n",count,str);
+	printf(".string%d:\n",count);
+	while(*str!=0)
+	{
+		printf("\tdb %d\n",*str);
+		str=str+1;
+	}
+	printf("\tdb 0\n");
 	return 0;
 }
 

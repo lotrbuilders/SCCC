@@ -4,9 +4,11 @@
 #include "identifiers.h"
 #include "type.h"
 #include <stdio.h>
+#include <string.h>
 
 int **newnode(int size);
 char *i_strdup(char *str);
+int in_main;
 
 int eval_global(int **ast);
 int eval_function_arguments(int **ast,int loc);
@@ -24,10 +26,12 @@ int eval_string(int **list);
 int global_label_count=0;
 int string_count=0;
 int **string_list=0;
+int stack_loc;
 
 
 int eval(int **ast)
 {
+	printf("section .data\n");
 	if(ast==0)
 		return debug_warning("ast==NULL in eval");
 	int id;
@@ -55,9 +59,12 @@ int eval_global(int **ast)
 	{
 		enter_block();
 		eval_function_arguments(*(ast+3),-12);
+		fprintf(stderr,"eval_function_def\n");
 		int pop_count;
 		gen_function_prolog(*(ast+1));
 		enter_block();
+		if(strcmp("main",*(ast+1))==0)
+			stack_loc=12;
 		eval_statements(*(ast+2));
 		pop_count=leave_block(0);
 		gen_function_epilog();
@@ -159,6 +166,7 @@ int eval_statement(int **ast)
 		int if_label;
 		int else_label;
 		
+		gen_pop();
 		eval_expression(*(ast+1));
 		
 		if_label=global_label_count;
@@ -166,7 +174,7 @@ int eval_statement(int **ast)
 		global_label_count=else_label+1;
 		
 		gen_jz(if_label);
-		gen_pop();
+		
 		eval_statement(*(ast+2));
 		
 		if(*(ast+3)!=0)
@@ -190,13 +198,12 @@ int eval_statement(int **ast)
 		global_label_count=label_end+1;
 		
 		gen_label(label_begin);
+		gen_pop();
 		eval_expression(*(ast+1));
 		gen_jz(label_end);
-		gen_pop();
 		eval_statement(*(ast+2));
 		gen_jmp(label_begin);
 		gen_label(label_end);
-		gen_pop();
 	}
 	else if(id==SYM_FOR)
 	{
@@ -214,8 +221,8 @@ int eval_statement(int **ast)
 		eval_expression(*(ast+2));
 		gen_jz(label_end);
 		eval_statement(*(ast+4));
-		eval_expression(*(ast+3));
 		gen_pop();
+		eval_expression(*(ast+3));
 		gen_jmp(label_begin);
 		gen_label(label_end);
 	}
@@ -264,6 +271,7 @@ int eval_expression(int **ast)
 	}
 	else if(id==SYM_ID)
 	{
+		fprintf(stderr,"eval id %s\n",*(ast+1));
 		if(isvalid(*(ast+1)))
 		{
 			int size=4;
@@ -271,7 +279,7 @@ int eval_expression(int **ast)
 			fprintf(stderr,"type %d\n",type);
 			if(type==TYPE_CHAR)
 				size=1;
-			if(isglobal(*(ast+1)))
+			if(islocal(*(ast+1))==0)
 				gen_global_var(*(ast+1),size);
 			else
 			{
@@ -289,10 +297,9 @@ int eval_expression(int **ast)
 	}
 	else if(id==SYM_STRING)
 	{
-		
 		gen_load_string(string_count);
 		add_string(*(ast+1),string_count);
-		fprintf(stderr,"name:%s\n",*(ast+1));
+		fprintf(stderr,"string:%s\n",*(ast+1));
 		string_count=string_count+1;
 	}
 	else if(id==SYM_NEGATE)
@@ -439,7 +446,10 @@ int eval_lvalue(int **ast)
 		eval_expression(*(ast+1));
 	}
 	else 
+	{
+		fprintf(stderr,"%d\n",id);
 		error("unexpected symbol in eval-lvalue");	
+	}
 	return 0;
 }
 
@@ -461,21 +471,33 @@ int eval_func_arg(int **ast)
 	return loc;
 	
 }
+int count_arguments(int **ast)
+{
+	if(ast==0)
+		return 0;
+	else 
+		return count_arguments(*(ast+2))+1;
+}
 
 int eval_func_call(int **ast)
 {
 	int child_id;
 	char *name;
 	int offset;
+	int sp;
+	int padding;
 	child_id=**(ast+1);
 	if(child_id!=SYM_ID)
 		error("Expected call to identifier");
 	int **child;
 	child=*(ast+1);
 	name=*(child+1);
+	sp=4*count_arguments(*(ast+2))+stack_loc+8-8*in_main;
+	for(padding=sp;padding>16;padding=padding-16) 1;
+	gen_subtract_sp(-padding);
 	offset=eval_func_arg(*(ast+2));
 	gen_function_call(name);
-	gen_subtract_sp(offset);
+	gen_subtract_sp(offset+padding);
 	return 0;
 }
 

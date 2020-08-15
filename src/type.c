@@ -32,7 +32,6 @@ char *declarator_type(int **ast,int type)
 	else
 		error("Expected decleration type to be int");
 	ptr_count=*(ast+2);
-	fprintf(stderr,"test\n");
 	if(ptr_count>=2)
 		return TYPE_PTRPTR;
 	else

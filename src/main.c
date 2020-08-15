@@ -6,13 +6,15 @@
 #include <stdio.h>
 #include <string.h>
 
+int error(char *str);
+
 char *i_strdup(char *str)
 {
 	int len;
 	char *ptr;
 	char *tmp;
-	len=strlen(str);
-	ptr=malloc((len+1)*sizeof(char));
+	len=strlen(str); 
+	ptr=malloc((len+1));
 	tmp=ptr;
 	while(*str!=0)
 	{
@@ -21,17 +23,19 @@ char *i_strdup(char *str)
 		str=str+1;
 	}
 	*tmp=0;
+	fprintf(stderr,"i-strdup %s\n",ptr); 
 	return ptr;
-}
+}  
 
 int main()
 {
-	lexed_string=malloc(32*sizeof(char));
+	//error("hello world");
+	lexed_string=malloc(128);
 	int **ast;
 	/*while((tk=lex())!=SYM_EOF)
 		printf("Token %d\n",tk);*/
 	ast=parse();
 	eval(ast);
 	
-	return 0;
-}
+	return 0; 
+} 

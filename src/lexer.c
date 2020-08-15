@@ -35,7 +35,7 @@ int lex()
 	for(c=nextc();1;c=nextc())
 	{
 		if(isspace(c))
-			;
+			1;
 		else if(isalpha(c)||(c=='_'))
 			return lex_id(c);
 		else if(isdigit(c))
@@ -44,6 +44,8 @@ int lex()
 			return lex_char();
 		else if(c=='"')
 			return lex_string();
+		else if(c=='#')
+			for(c=nextc();(c!='\n')&&(c!=SYM_EOF);c=nextc()) 1;
 		else if(ispunct(c))
 			return lex_punct(c);
 		else if(c==EOF)
@@ -59,7 +61,7 @@ int lex_id(int c)
 	
 	int i;
 	
-	for(i=0;(isalnum(c)||(c=='_'))&&(i<31);i=i+1)
+	for(i=0;(isalnum(c)||(c=='_'))&&(i<127);i=i+1)
 	{
 		*(lexed_string+i)=c;
 		c=nextc();
@@ -155,12 +157,17 @@ int lex_char()
 		c=nextc();
 		if(c=='n')
 			lexed_number='\n';
+		else if(c=='t')
+			lexed_number='\t';
 		else if(c=='\\')
 			lexed_number=c;
 		else if(c=='\'')
 			lexed_number=c;
 		else
+		{
+			fprintf(stderr,"%c\n",c);
 			error("unknown char whilst parsing character constant after \\ mark");
+		}
 	}
 	else
 		lexed_number=c;
@@ -177,7 +184,7 @@ int lex_string()
 {
 	int c;
 	int i=0;
-	for(c=nextc();(c!='"')&&(i<31);c=nextc())
+	for(c=nextc();(c!='"')&&(i<127);c=nextc())
 	{
 		if(c=='\\')
 		{
@@ -191,12 +198,13 @@ int lex_string()
 			else if(c=='"')
 				*(lexed_string+i)=c;
 			else
-				error("unknown char whilst parsing character constant after \\ mark");
+				error("unknown char whilst parsing string constant after \\ mark");
 		}
-		else 
+		else   
 			*(lexed_string+i)=c;
 		i=i+1;
 	}
+	*(lexed_string+i)=0;
 	return SYM_STRING;
 }
 

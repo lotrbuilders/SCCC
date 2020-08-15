@@ -1,7 +1,10 @@
-int puts(char *str);
+int **a=0;
+
 char *malloc(int size);
 
-int main() {
-	char *str="Hello world";
-    return puts(str);
+int main()
+{
+	a=malloc(sizeof(int *));
+	*a=1;
+	return *a;
 }
