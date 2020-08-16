@@ -1,72 +1,81 @@
+/*
+	x86-32 backend for SCCC
+    Copyright (C) 2020  Daan Oosterveld
+
+    SCCC is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+
+    SCCC is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 #include <stdio.h>
 #include <string.h>
 #include "symbols.h"
 
 int in_main;
 
+int TARGET_SIZEOF_INT=4;
+int TARGET_ARGUMENT_START=-12;
+int TARGET_VARIABLE_START=8;
+int TARGET_STACK_RESET=4;
+
+int **output_file;
+
 int gen_prolog()
 {
-	puts("section .data");
+	fputs("section .data\n",output_file);
 	return 0;
 }
 
 int gen_function_prolog(char *name)
 {
-	puts("\nsection .text");
-	printf("global %s:function (%s.end-%s)\n%s:\n",name,name,name,name);
+	fputs("\nsection .text\n",output_file);
+	fprintf(output_file,"global %s:function (%s.end-%s)\n%s:\n",name,name,name,name);
 	
-	if(strcmp("main",name)==0)
-	{
-		puts("\tlea ecx, [esp+4]");
-        puts("\tand esp, -16");
-        puts("\tpush DWORD[ecx-4]");
-        puts("\tpush ebp");
-        puts("\tmov ebp, esp");
-        puts("\tpush ecx");
-        puts("\tsub esp, 4");
-		in_main=1;
-	}
-	else
-	{
-		puts("\tpush ebp");
-		puts("\tmov ebp,esp");
-		in_main=0;
-	}
-	puts("\tpush ebx");
+	fputs("\tpush ebp\n",output_file);
+	fputs("\tmov ebp,esp\n",output_file);
+	fputs("\tpush ebx\n",output_file);
 	return 0;
 	
 }
 
 int gen_function_epilog(char *name)
 {
-	puts(".end:\n");
-	puts("section .data");
+	fputs(".end:\n\n",output_file);
+	fputs("section .data\n",output_file);
 	return 0;
 	
 }
 
 int gen_extern(char *name)
 {
-	printf("extern %s\n",name);
+	fprintf(output_file,"extern %s\n",name);
 	return 0;
 }
 
 int gen_common(char *name)
 {
-	printf("common %s 4:4\n",name);
+	fprintf(output_file,"common %s 4:4\n",name);
 	return 0;
 }
 int gen_decleration(char *name,int value)
 {
-	printf("global %s\n",name);
-	printf("%s: dd %d\n",name,value);
+	fprintf(output_file,"global %s\n",name);
+	fprintf(output_file,"%s: dd %d\n",name,value);
 	return 0;
 }
 
 int gen_label(int label_count)
 {
 	
-	printf(".L%d:\n",label_count);
+	fprintf(output_file,".L%d:\n",label_count);
 	return 0;
 	
 }
@@ -74,7 +83,7 @@ int gen_label(int label_count)
 int gen_subtract_sp(int count)
 {
 	
-	printf("\tadd esp,%d\n",count);
+	fprintf(output_file,"\tadd esp,%d\n",count);
 	return 0;
 	
 }
@@ -82,29 +91,29 @@ int gen_subtract_sp(int count)
 int gen_pop()
 {
 	
-	puts("\tpop eax");
+	fputs("\tpop eax\n",output_file);
 	return 0;
 	
 }
 
 int gen_push_constant(int constant)
 {
-	printf("\tpush %d\n",constant);
+	fprintf(output_file,"\tpush %d\n",constant);
 	return 0;
 }
 
 int gen_dup()
 {
-	puts("\tpush eax");
+	fputs("\tpush eax\n",output_file);
 	return 0;
 }
 
 int gen_normalize()
 {
 	
-	puts("\tor eax,eax");
-	puts("\tsetnz al");
-	puts("\tmovzx eax,al");
+	fputs("\tor eax,eax\n",output_file);
+	fputs("\tsetnz al\n",output_file);
+	fputs("\tmovzx eax,al\n",output_file);
 	return 0;
 	
 }
@@ -112,21 +121,25 @@ int gen_normalize()
 int gen_return()
 {
 	
-	if(in_main==0)
+	/*if(in_main==0)
 	{
-		puts("\tmov ebx,[ebp-4]");
-		puts("\tmov esp,ebp");
-		puts("\tpop ebp");
-		puts("\tret");
+		fputs("\tmov ebx,[ebp-4]\n",output_file);
+		fputs("\tmov esp,ebp\n",output_file);
+		fputs("\tpop ebp\n",output_file);
+		fputs("\tret\n",output_file);
 	}
 	else
 	{
-		puts("\tmov ebx,[ebp-12]");
-		puts("\tmov ecx, DWORD[ebp-4]");
-        puts("\tleave");
-        puts("\tlea esp, [ecx-4]");
-        puts("\tret");
-	}
+		fputs("\tmov ebx,[ebp-12]\n",output_file);
+		fputs("\tmov ecx, DWORD[ebp-4]\n",output_file);
+        fputs("\tleave\n",output_file);
+        fputs("\tlea esp, [ecx-4]\n",output_file);
+        fputs("\tret\n",output_file);
+	}*/
+	fputs("\tmov ebx,[ebp-4]\n",output_file);
+	fputs("\tmov esp,ebp\n",output_file);
+	fputs("\tpop ebp\n",output_file);
+	fputs("\tret\n",output_file);
 	return 0;
 	
 }
@@ -134,8 +147,8 @@ int gen_return()
 int gen_jz(int label_count)
 {
 	
-	puts("\tor eax,eax");
-	printf("\tjz .L%d\n",label_count);
+	fputs("\tor eax,eax\n",output_file);
+	fprintf(output_file,"\tjz .L%d\n",label_count);
 	return 0;
 	
 }
@@ -143,8 +156,8 @@ int gen_jz(int label_count)
 int gen_jnz(int label_count)
 {
 	
-	puts("\tor eax,eax");
-	printf("\tjnz .L%d\n",label_count);
+	fputs("\tor eax,eax\n",output_file);
+	fprintf(output_file,"\tjnz .L%d\n",label_count);
 	return 0;
 	
 }
@@ -152,42 +165,42 @@ int gen_jnz(int label_count)
 int gen_jmp(int label_count)
 {
 	
-	printf("\tjmp .L%d\n",label_count);
+	fprintf(output_file,"\tjmp .L%d\n",label_count);
 	return 0;
 	
 }
 
 int gen_assign(int size)
 {
-	puts("\tmov ebx,eax");
-	puts("\tpop eax");
+	fputs("\tmov ebx,eax\n",output_file);
+	fputs("\tpop eax\n",output_file);
 	if(size==4)
-		puts("\tmov [ebx],eax");
+		fputs("\tmov [ebx],eax\n",output_file);
 	else if(size==1)
-		puts("\tmov [ebx],al");
+		fputs("\tmov [ebx],al\n",output_file);
 	return 0;
 }
 
 int gen_comparison(int type)
 {
 	
-	puts("\tpop ecx");
-	puts("\tcmp eax,ecx");
+	fputs("\tpop ecx\n",output_file);
+	fputs("\tcmp eax,ecx\n",output_file);
 	
 	if(type==SYM_EQ)
-		puts("\tsete al");
+		fputs("\tsete al\n",output_file);
 	else if(type==SYM_NE)
-		puts("\tsetne al");
+		fputs("\tsetne al\n",output_file);
 	else if(type=='>')
-		puts("\tsetg al");
+		fputs("\tsetg al\n",output_file);
 	else if(type=='<')
-		puts("\tsetl al");
+		fputs("\tsetl al\n",output_file);
 	else if(type==SYM_GE)
-		puts("\tsetge al");
+		fputs("\tsetge al\n",output_file);
 	else
-		puts("\tsetle al");
+		fputs("\tsetle al\n",output_file);
 	
-	puts("\tmovzx eax,al");
+	fputs("\tmovzx eax,al\n",output_file);
 	
 	return 0;
 	
@@ -196,8 +209,8 @@ int gen_comparison(int type)
 int gen_add()
 {
 	
-	puts("\tpop ecx");
-	puts("\tadd eax,ecx");
+	fputs("\tpop ecx\n",output_file);
+	fputs("\tadd eax,ecx\n",output_file);
 	return 0;
 	
 }
@@ -205,8 +218,8 @@ int gen_add()
 int gen_subtract()
 {
 	
-	puts("\tpop ecx");
-	puts("\tsub eax,ecx");
+	fputs("\tpop ecx\n",output_file);
+	fputs("\tsub eax,ecx\n",output_file);
 	return 0;
 	
 }
@@ -214,8 +227,8 @@ int gen_subtract()
 int gen_multiply()
 {
 	
-	puts("\tpop ecx");
-	puts("\timul ecx");
+	fputs("\tpop ecx\n",output_file);
+	fputs("\timul ecx\n",output_file);
 	return 0;
 	
 }
@@ -223,7 +236,7 @@ int gen_multiply()
 int gen_negate()
 {
 	
-	puts("\tneg eax");
+	fputs("\tneg eax\n",output_file);
 	return 0;
 	
 }
@@ -231,9 +244,9 @@ int gen_negate()
 int gen_pointer(int size)
 {
 	if(size==4)
-		puts("\tmov eax,[eax]");
+		fputs("\tmov eax,[eax]\n",output_file);
 	else if(size==1)
-		puts("\tmovsx eax,BYTE [eax]");
+		fputs("\tmovsx eax,BYTE [eax]\n",output_file);
 	return 0;
 	
 }
@@ -241,69 +254,85 @@ int gen_pointer(int size)
 int gen_constant(int constant)
 {
 	
-	puts("\tpush eax");
-	printf("\tmov eax,%d\n",constant);
+	fputs("\tpush eax\n",output_file);
+	fprintf(output_file,"\tmov eax,%d\n",constant);
 	return 0;
 	
 }
 
 int gen_local_var(int location,int size)
 {
-	puts("\tpush eax");
+	fputs("\tpush eax\n",output_file);
 	if(size==4)
-		printf("\tmov eax,[ebp-%d]\n",location+4);
+		fprintf(output_file,"\tmov eax,[ebp-%d]\n",location+4);
 	else if(size==1)
-		printf("\tmovsx eax,BYTE [ebp-%d]\n",location+4);
+		fprintf(output_file,"\tmovsx eax,BYTE [ebp-%d]\n",location+4);
 	return 0;
 }
 
 
 int gen_global_var(char *name,int size)
 {
-	puts("\tpush eax");
+	fputs("\tpush eax\n",output_file);
 	if(size==4)
-		printf("\tmov eax,[%s]\n",name);
+		fprintf(output_file,"\tmov eax,[%s]\n",name);
 	else if(size==1)
-		printf("\tmovsx eax,BYTE [%s]\n",name);
+		fprintf(output_file,"\tmovsx eax,BYTE [%s]\n",name);
 	
 	return 0;
 }
 
 int gen_local_address(int location)
 {
-	puts("\tpush eax");
-	printf("\tlea eax,[ebp-%d]\n",location+4);
+	fputs("\tpush eax\n",output_file);
+	fprintf(output_file,"\tlea eax,[ebp-%d]\n",location+4);
 	return 0;
 }
 
 int gen_global_address(char *name)
 {
-	puts("\tpush eax");
-	printf("\tlea eax,[%s]\n",name);
+	fputs("\tpush eax\n",output_file);
+	fprintf(output_file,"\tlea eax,[%s]\n",name);
+	return 0;
+}
+
+int gen_func_arg()
+{
+	fputs("\tpush eax\n",output_file);
 	return 0;
 }
 
 int gen_function_call(char *name)
 {
-	printf("\tcall %s\n",name);
+	fprintf(output_file,"\tcall %s\n",name);
 	return 0;
+}
+
+int gen_padding(int argc,int stack_loc)
+{
+	int padding;
+	int sp;
+	sp=4*argc+stack_loc+4;
+	for(padding=sp;padding>=16;padding=padding-16) 1;
+	fprintf(output_file,"\tsub esp,%d\n",padding);
+	return padding;
 }
 
 int gen_string(char *str,int count)
 {
-	printf(".string%d:\n",count);
+	fprintf(output_file,".string%d:\n",count);
 	while(*str!=0)
 	{
-		printf("\tdb %d\n",*str);
-		str=str+1;
+		fprintf(output_file,"\tdb %d\n",*str);
+		str=str+1; 
 	}
-	printf("\tdb 0\n");
+	fprintf(output_file,"\tdb 0\n\n",output_file);
 	return 0;
 }
 
 int gen_load_string(int count)
 {
-	puts("\tpush eax");
-	printf("\tmov eax,.string%d\n",count);
+	fputs("\tpush eax\n",output_file);
+	fprintf(output_file,"\tmov eax,.string%d\n",count);
 	return 0;
 }

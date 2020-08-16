@@ -1,13 +1,31 @@
+/*
+	Identifier operations for SCCC
+    Copyright (C) 2020  Daan Oosterveld
+
+    SCCC is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+
+    SCCC is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 #include "node.h"
 #include "symbols.h"
 #include "identifiers.h"
+#include "gen.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
 int **local_block=0;
 int **global_list=0;
-int stack_loc=4;//Backend assumption
+int stack_loc=0;
 
 int free_locals(int **local_list);
 char *i_strdup(char *str);
@@ -20,10 +38,12 @@ int DEBUG_IDENTIFIER;
 		pointer to next(upper) stackframe
 */
 
-int enter_block()
+int enter_block(int reset_stack)
 {
 	if(DEBUG_IDENTIFIER)
 		fprintf(stderr,"enter block\n");
+	if(reset_stack)
+		stack_loc=TARGET_STACK_RESET;//Backend assumption
 	int **new_block;
 	new_block=newnode(2);
 	*new_block=0;
@@ -41,7 +61,7 @@ int leave_block(int reset_stack)
 	count=free_locals(*local_block);
 	stack_loc=stack_loc-count;
 	if(reset_stack)
-		stack_loc=4;//Backend assumption
+		stack_loc=TARGET_STACK_RESET;//Backend assumption
 	local_block=*(local_block+1);
 	return count;
 	
@@ -76,7 +96,7 @@ int add_identifier(char *name,int type)
 	*(entry+1)=*local_block;
 	*(entry+2)=type;
 	*(entry+3)=stack_loc;
-	stack_loc=stack_loc+4;//Backend assumption
+	stack_loc=stack_loc+TARGET_SIZEOF_INT;//Backend assumption
 	*local_block=entry;
 	return 0;
 }
@@ -106,7 +126,7 @@ int free_locals(int **local_list)
 			fprintf(stderr,"\tremoved %s\n",*local_list);
 		free(*local_list);
 		free(local_list);
-		return free_locals(next)+4;
+		return free_locals(next)+TARGET_SIZEOF_INT;
 	}
 	return 0;
 }

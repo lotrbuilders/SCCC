@@ -1,13 +1,10 @@
-int a()
+int exit(int status);
+
+int foo()
 {
-	if(1)
-		return 2;
-	else return *"Hello";
+	exit(-1);
 }
 
-int main()
-{
-	if(2)
-		return a();
-	else return *"bye";
+int main() {
+    foo()
 }

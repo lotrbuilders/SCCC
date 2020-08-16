@@ -1,3 +1,21 @@
+/*
+	Backend independent AST evaluator SCCC
+    Copyright (C) 2020  Daan Oosterveld
+
+    SCCC is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+
+    SCCC is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include "gen.h"
 #include "errorhandling.h"
 #include "symbols.h"
@@ -64,13 +82,15 @@ int eval_global(int **ast)
 	{
 		if(EVAL_GLOBAL_DEBUG)
 			fprintf(stderr,"function defenition %s\n",*(ast+1));
-		enter_block();
-		eval_function_arguments(*(ast+3),-12);//Backend assumption
+		if(strcmp(*(ast+1),"main")==0)
+			in_main=1;
+		else
+			in_main=0;
+		enter_block(1);
+		eval_function_arguments(*(ast+3),TARGET_ARGUMENT_START);//Backend assumption
 		int pop_count;
 		gen_function_prolog(*(ast+1));
-		enter_block();
-		if(strcmp("main",*(ast+1))==0)
-			stack_loc=12;//Backend assumption
+		enter_block(0);
 		eval_statements(*(ast+2));
 		pop_count=leave_block(0);
 		gen_function_epilog();
@@ -128,7 +148,7 @@ int eval_function_arg(int **ast,int loc)
 int eval_function_arguments(int **ast,int loc)
 {
 	if(ast==0)
-		return -12;//Backend assumption
+		return TARGET_ARGUMENT_START;//Backend assumption
 	if(EVAL_GLOBAL_DEBUG)
 		fprintf(stderr,"evaluating function argment list\n");
 	int id;
@@ -136,9 +156,8 @@ int eval_function_arguments(int **ast,int loc)
 	if(id!=SYM_DECL_LIST)
 		error("Expected decleration list");
 	eval_function_arg(*(ast+1),loc);
-	loc=eval_function_arguments(*(ast+2),loc-4);//Backend assumption
-	loc=loc-4;//Backend assumption
-	return loc;
+	loc=eval_function_arguments(*(ast+2),loc-TARGET_SIZEOF_INT);//Backend assumption
+	return 0;
 }
 
 int eval_statements(int **ast)
@@ -184,7 +203,7 @@ int eval_statement(int **ast)
 		if(EVAL_STATEMENT_DEBUG)
 			fprintf(stderr,"evaluating compound statement\n");
 		int count;
-		enter_block();
+		enter_block(0);
 		eval_statements(*(ast+1));
 		count=leave_block(0);
 		gen_subtract_sp(count);
@@ -268,7 +287,6 @@ int eval_statement(int **ast)
 			fprintf(stderr,"evaluating expression statement\n");
 		gen_pop();
 		eval_expression(ast);
-		//gen_pop();
 	}
 	return 0;
 }
@@ -315,7 +333,7 @@ int eval_expression(int **ast)
 			fprintf(stderr,"evaluating id %s\n",*(ast+1));
 		if(isvalid(*(ast+1)))
 		{
-			int size=4;
+			int size=TARGET_SIZEOF_INT;
 			int type=find_id_type(*(ast+1));
 			if(EVAL_EXPRESSION_DEBUG)
 				fprintf(stderr,"type of %s is %d\n",*(ast+1),type);
@@ -363,7 +381,7 @@ int eval_expression(int **ast)
 	{
 		if(EVAL_EXPRESSION_DEBUG)
 			fprintf(stderr,"evaluating pointer\n");
-		int size=4;
+		int size=TARGET_SIZEOF_INT;
 		int type=find_type(*(ast+1));
 		if(type==TYPE_CHARPTR)
 			size=1;
@@ -403,7 +421,7 @@ int eval_expression(int **ast)
 		{
 			if((left_type-TYPE_INTPTR)!=TYPE_CHAR)
 			{
-				gen_constant(4);//Backend assumption
+				gen_constant(TARGET_SIZEOF_INT);//Backend assumption
 				gen_multiply();
 			}
 		}
@@ -412,7 +430,7 @@ int eval_expression(int **ast)
 		{
 			if((right_type-TYPE_INTPTR)!=TYPE_CHAR)
 			{
-				gen_constant(4);//Backend assumption
+				gen_constant(TARGET_SIZEOF_INT);//Backend assumption
 				gen_multiply();
 			}
 		}
@@ -427,13 +445,13 @@ int eval_expression(int **ast)
 		eval_expression(*(ast+2));
 		if((left_type>TYPE_INT)&&(right_type==TYPE_INT))
 		{
-			gen_constant(4);//Backend assumption
+			gen_constant(TARGET_SIZEOF_INT);//Backend assumption
 			gen_multiply();
 		}
 		eval_expression(*(ast+1));
 		if((right_type>TYPE_INT)&&(left_type==TYPE_INT))
 		{
-			gen_constant(4);//Backend assumption
+			gen_constant(TARGET_SIZEOF_INT);//Backend assumption
 			gen_multiply();
 		}
 		gen_subtract();
@@ -476,7 +494,7 @@ int eval_expression(int **ast)
 	{
 		if(EVAL_EXPRESSION_DEBUG)
 			fprintf(stderr,"evaluating assignment\n");
-		int size=4;//Backend assumption
+		int size=TARGET_SIZEOF_INT;//Backend assumption
 		int type=find_lvalue_type(*(ast+1));
 		if(type==TYPE_CHAR)
 			size=1;
@@ -546,10 +564,10 @@ int eval_func_arg(int **ast)
 	id=*ast;
 	if(id!=SYM_EXPR_LIST)
 		error("Expected expression list");
-	loc=eval_func_arg(*(ast+2))+4;
+	loc=eval_func_arg(*(ast+2))+TARGET_SIZEOF_INT;
 	gen_pop();
 	eval_expression(*(ast+1));
-	gen_dup();
+	gen_func_arg();
 	return loc;
 	
 }
@@ -566,7 +584,6 @@ int eval_func_call(int **ast)
 	int child_id;
 	char *name;
 	int offset;
-	int sp;
 	int padding;
 	child_id=**(ast+1);
 	if(child_id!=SYM_ID)
@@ -574,11 +591,7 @@ int eval_func_call(int **ast)
 	int **child;
 	child=*(ast+1);
 	name=*(child+1);
-	
-	sp=4*count_arguments(*(ast+2))+stack_loc+8-8*in_main;//Heavy Backend assumptions
-	for(padding=sp;padding>16;padding=padding-16) 1;//Backend assumption and not needed for lots of implementations
-	
-	gen_subtract_sp(-padding);
+	padding=gen_padding(count_arguments(*(ast+2)),stack_loc);
 	offset=eval_func_arg(*(ast+2));
 	gen_function_call(name);
 	gen_subtract_sp(offset+padding);

@@ -1,3 +1,18 @@
+#	Makefile for SCCC
+#   Copyright (C) 2020  Daan Oosterveld
+
+#   SCCC is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+
+#   SCCC is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 IDIR = ./hdr
 ODIR = ./obj
 CC ?= gcc
@@ -31,7 +46,7 @@ ifneq ($(CC),sccc)
 else
 	./sccc.sh  $< $@ 2>/dev/null
 endif
-$(ODIR)/identifiers.o : identifiers.c
+$(ODIR)/identifiers.o : identifiers.c gen.h node.h symbols.h
 ifneq ($(CC),sccc)
 	$(CC) $(CFLAGS) -o $@ $<
 else
@@ -87,5 +102,5 @@ clean :
 	del /q "$(ODIR)/"
 else
 clean :
-	-rm  $(OBJ)
+	-rm  $(OBJ) $(ODIR)/x86-gen.o
 endif
