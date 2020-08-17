@@ -28,7 +28,7 @@ test_not_implemented () {
 
 run_our_program () {
 	
-    actual_out=`./tmp.out 2>/dev/null`
+    actual_out=`./a.out`
     actual_exit_code=$?
     rm $1 2>/dev/null
 }
@@ -71,7 +71,7 @@ test_stage () {
             # this may depend on features we haven't implemented yet
             # if compilation succeeds, make sure it gives the right result
             # otherwise don't count it as success or failure
-            if [[ -f ./tmp.out ]] && [[ $status -eq 0 ]]; then
+            if [[ -f ./a.out ]] && [[ $status -eq 0 ]]; then
                 # it succeeded, so run it and make sure it gives the right result
                 run_our_program $base
                 compare_program_results
