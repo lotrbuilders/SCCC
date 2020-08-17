@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 	if(input_file==0)
 	{
 		fprintf(stderr,"Expected an input file\n");
-		exit(-1);
+		return -1;
 	}
 	stripped=strip_suffix(input_file);
 	if(output_file==0)
