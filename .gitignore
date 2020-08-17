@@ -61,3 +61,4 @@ dkms.conf
 *tmp.out
 *compiler
 *.bat
+*sccc
