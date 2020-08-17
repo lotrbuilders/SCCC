@@ -52,8 +52,8 @@ int **parse_expression_list();
 int **parse_unary_expression();
 int **parse_primary_expression();
 
-int PARSER_DEBUG=1;
-int PEEK_DEBUG=1;
+int PARSER_DEBUG=0;
+int PEEK_DEBUG=0;
 
 int TARGET_SIZEOF_INT;
 

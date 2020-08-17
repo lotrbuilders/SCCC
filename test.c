@@ -1,10 +1,11 @@
-int exit(int status);
+int exit(int status)
 
 int foo()
 {
 	exit(-1);
 }
 
-int main() {
-    foo();
+int main()
+{
+	return 0;
 }

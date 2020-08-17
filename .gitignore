@@ -60,3 +60,4 @@ dkms.conf
 *tmp.o 
 *tmp.out
 *compiler
+*.bat

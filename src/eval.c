@@ -46,9 +46,9 @@ int string_count=0;
 int **string_list=0;
 int stack_loc;
 
-int EVAL_GLOBAL_DEBUG=1;
-int EVAL_STATEMENT_DEBUG=1;
-int EVAL_EXPRESSION_DEBUG=1;
+int EVAL_GLOBAL_DEBUG=0;
+int EVAL_STATEMENT_DEBUG=0;
+int EVAL_EXPRESSION_DEBUG=0;
 
 int eval(int **ast)
 {

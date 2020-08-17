@@ -312,7 +312,7 @@ int gen_padding(int argc,int stack_loc)
 {
 	int padding;
 	int sp;
-	sp=4*argc+stack_loc+4;
+	sp=4*argc+stack_loc;
 	for(padding=sp;padding>=16;padding=padding-16) 1;
 	fprintf(output_file,"\tsub esp,%d\n",padding);
 	return padding;
