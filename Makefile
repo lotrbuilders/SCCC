@@ -26,7 +26,7 @@ vpath %.o $(ODIR)
 _OBJ = errorhandling.o symbols.o lexer.o main.o parser.o node.o eval.o identifiers.o type.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
-all : compiler
+all : compiler sccc
 
 $(ODIR)/errorhandling.o : errorhandling.c stdio.h stdlib.h
 ifneq ($(CC),sccc)
@@ -93,14 +93,25 @@ ifneq ($(CC),sccc)
 else
 	./sccc.sh  $< $@ 2>/dev/null
 endif
+
+$(ODIR)/sccc.o : sccc.c
+ifneq ($(CC),sccc)
+	$(CC) $(CFLAGS) -o $@ $<
+else
+	./sccc.sh  $< $@ 2>/dev/null
+endif
 	
 compiler : $(OBJ) $(ODIR)/x86-gen.o
 	gcc -m32 -o $@ $^
+	
+sccc : sccc.o
+	gcc -m32 -o $@ $^
+	
 	
 ifeq ($(OS),Windows_NT)  
 clean :
 	del /q "$(ODIR)/"
 else
 clean :
-	-rm  $(OBJ) $(ODIR)/x86-gen.o
+	-rm  $(OBJ) $(ODIR)/x86-gen.o $(ODIR)/sccc.o
 endif

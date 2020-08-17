@@ -26,7 +26,9 @@
 int error(char *str);
 
 int gen_prolog();
-int **output_file;
+
+int *output_file;
+int *input_file;
 
 char *i_strdup(char *str)
 {
@@ -47,17 +49,44 @@ char *i_strdup(char *str)
 	return ptr;
 }  
 
-int main()
+int arg_parser(int argc, char **argv)
 {
-	//error("hello world");
-	lexed_string=malloc(128);
+	char *str;
+	char **arg=argv+1;
 	output_file=stdout;
+	input_file=stdin;
+	for(str=*arg;str!=0;str=*arg)
+	{
+		if(strcmp(str,"-o")==0)
+		{
+			arg=arg+1;
+			if(*arg==0)
+				error("Expected output file after \"-o\"");
+			output_file=fopen(*arg,"w+");
+			if(output_file==0)
+				error("Output file does not exist");
+			arg=arg+1;
+		}
+		else
+		{
+			input_file=fopen(str,"r");
+			if(input_file==0)
+				error("Input file does not exist");
+			arg=arg+1;
+		}
+	}
+	return 0;
+}
+
+int main(int argc, char **argv)
+{
+	lexed_string=malloc(128);
+	arg_parser(argc,argv);
+	
 	int **ast;
-	/*while((tk=lex())!=SYM_EOF)
-		printf("Token %d\n",tk);*/
 	ast=parse();
 	gen_prolog();
 	eval(ast);
 	
 	return 0; 
-} 
+}

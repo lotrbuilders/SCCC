@@ -29,17 +29,18 @@ int lex_char();
 int lex_string();
 
 int LEXER_DEBUG=0;
+int *input_file;
 
 int nextc()
 {
-	return fgetc(stdin);
+	return fgetc(input_file);
 }
 
 int peekc()
 {
 	int c;
-	c=fgetc(stdin);
-	ungetc(c,stdin);
+	c=fgetc(input_file);
+	ungetc(c,input_file);
 	return c;
 }
 
@@ -83,7 +84,7 @@ int lex_id(int c)
 		*(lexed_string+i)=c;
 		c=nextc();
 	}
-	ungetc(c,stdin);
+	ungetc(c,input_file);
 	*(lexed_string+(i))=0;
 	if(LEXER_DEBUG)
 		fprintf(stderr,"\tid=%s\n",lexed_string);
@@ -120,7 +121,7 @@ int lex_num(int c)
 		lexed_number=lexed_number*10+c-'0';
 		c=nextc();
 	}
-	ungetc(c,stdin);
+	ungetc(c,input_file);
 	return SYM_CONSTANT;
 	
 }

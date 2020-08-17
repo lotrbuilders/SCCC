@@ -1,5 +1,5 @@
 #! /bin/bash
-make compiler
+make all
 #read -p "waiting for enter"
 cpp test.c -nostdinc -I./include/ -I./hdr -o pp.c -E
 ./compiler <pp.c >tmp.s
