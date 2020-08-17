@@ -1,5 +1,5 @@
 # C Compiler tests
-SCCC uses the compiler tests as written by Nora Sandler. These have been modified to suit the limitations and extra features of this compiler. Note this file has been edited for SCCC purposes. Since the compiler itself does not follow the requirements of the test script directly, a seperate script 'run.sh' is present, which helps compilation.
+SCCC uses the compiler tests as written by Nora Sandler. These have been modified to suit the limitations and extra features of this compiler. Note this file has been edited for SCCC purposes.
 
 # Write a C Compiler!
 
