@@ -276,6 +276,7 @@ int **parse_statement_list()
 		jump-statement
 		selection-statement
 		local-decleration
+		expression ;
 */
 
 int **parse_statement()
@@ -338,7 +339,7 @@ int **parse_local_decleration()
 
 /*
 	decleration :=
-		INT declerator 
+		( INT | CHAR ) declerator 
 */
 int **parse_decleration()
 {
@@ -375,7 +376,6 @@ int **parse_decleration()
 	declarator :=
 		{ * } + ID
 */
-
 int **parse_declerator()
 {
 	
@@ -401,14 +401,10 @@ int **parse_declerator()
 	
 }
 
-
-
-
 /*
 	jump-statement :=
 		RETURN expression ;
 */
-
 int **parse_jump_statement()
 {
 	
@@ -446,7 +442,6 @@ int **parse_jump_statement()
 	selection-statement :=
 		IF ( expression ) statement
 		IF ( expression ) statement else statement
-	
 */
 int **parse_selection_statement()
 {
@@ -489,6 +484,11 @@ int **parse_selection_statement()
 	
 }
 
+/*
+	iteration-statement :=
+		WHILE ( expression ) statement
+		FOR ( expression ; expression ; expression) statement
+*/
 int **parse_iteration_statement()
 {
 	
@@ -532,7 +532,7 @@ int **parse_iteration_statement()
 
 /*
 	expression :=
-		equality-expression
+		assignment-expression
 */
 int **parse_expression()
 {
@@ -571,6 +571,10 @@ int **parse_assignment_expression()
 	
 }
 
+/* 
+	logical-or-expression :=
+		logical-and-expression { || logical-and-expression } +
+*/
 int **parse_logical_or_expression()
 {
 	
@@ -598,6 +602,10 @@ int **parse_logical_or_expression()
 	
 }
 
+/* 
+	logical-and-expression :=
+		equality-expression { && equality-expression } +
+*/
 int **parse_logical_and_expression()
 {
 	
@@ -625,7 +633,10 @@ int **parse_logical_and_expression()
 	
 }
 
-
+/* 
+	equality-expression :=
+		comparison-expression { ( == | != ) comparison-expression  } +
+*/
 int **parse_equality_expression()
 {
 	
@@ -653,6 +664,10 @@ int **parse_equality_expression()
 	
 }
 
+/* 
+	comparison-expression :=
+		additive-expression { ( > | < | >= | <= ) additive-expression  } +
+*/
 int **parse_comparison_expression()
 {
 	
@@ -847,6 +862,10 @@ int **parse_postfix_expression()
 	
 }
 
+/* 
+	expression-list :=
+		expression { , expression-list } 
+*/
 int **parse_expression_list()
 {
 	int **list;
