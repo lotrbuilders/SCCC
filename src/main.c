@@ -36,7 +36,7 @@ char *i_strdup(char *str)
 	char *ptr;
 	char *tmp;
 	len=strlen(str); 
-	ptr=malloc((len+1));
+	ptr=malloc(len+2);
 	tmp=ptr;
 	while(*str!=0)
 	{

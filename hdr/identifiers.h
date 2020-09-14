@@ -23,6 +23,6 @@ int isglobal(char *name);
 int islocal(char *name);
 int locate_identifier(char *name);
 int find_id_type(char *name);
-int enter_block();
+int enter_block(int reset_stack);
 int leave_block(int reset_stack);
 
